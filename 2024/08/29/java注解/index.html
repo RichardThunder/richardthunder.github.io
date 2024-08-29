@@ -1,0 +1,330 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Archives | 草莓熊的博客</title><meta name="author" content="Richard Thunder"><meta name="copyright" content="Richard Thunder"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="java 注解基础">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Archives">
+<meta property="og:url" content="https://richardthunder.github.io/2024/08/29/java%E6%B3%A8%E8%A7%A3/index.html">
+<meta property="og:site_name" content="草莓熊的博客">
+<meta property="og:description" content="java 注解基础">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://richardthunder.github.io/img/avatar.jpeg">
+<meta property="article:published_time" content="2024-08-29T16:55:18.342Z">
+<meta property="article:modified_time" content="2024-08-29T16:55:18.342Z">
+<meta property="article:author" content="Richard Thunder">
+<meta property="article:tag" content="Java注解">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://richardthunder.github.io/img/avatar.jpeg"><link rel="shortcut icon" href="/img/earth.png"><link rel="canonical" href="https://richardthunder.github.io/2024/08/29/java%E6%B3%A8%E8%A7%A3/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=4.13.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.1/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: enable,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Archives',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-08-30 00:55:18'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/img/avatar.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">12</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">14</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">6</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> Archives</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> Tags</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> Categories</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('/img/blogBG.jpg')"><nav id="nav"><span id="blog-info"><a href="/" title="草莓熊的博客"><img class="site-icon" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/img/earth.png"/><span class="site-name">草莓熊的博客</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> Archives</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> Tags</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> Categories</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">Archives</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-08-29T16:55:18.342Z" title="发表于 2024-08-30 00:55:18">2024-08-30</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-08-29T16:55:18.342Z" title="更新于 2024-08-30 00:55:18">2024-08-30</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Java/">Java</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="Archives"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h1 id="注解"><a href="#注解" class="headerlink" title="注解"></a>注解</h1><ul>
+<li>java 自带注解 @Override @Deprecated @SupressWarning</li>
+<li>元注解 定义注解的注解</li>
+<li>自定义注解 由元注解自定义的注解</li>
+</ul>
+<h2 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h2><ul>
+<li>生成文档 标识元数据生成 javadoc 文档</li>
+<li>编译检查 标识元数据进行编译检查</li>
+<li>编译时动态处理 动态生成代码</li>
+<li>运行时动态处理 使用反射注入实例</li>
+</ul>
+<h2 id="java-内置注解"><a href="#java-内置注解" class="headerlink" title="java 内置注解"></a>java 内置注解</h2><ul>
+<li><code>@Override</code>：表示当前的方法定义将覆盖父类中的方法</li>
+<li><code>@Deprecated</code>：表示代码被弃用，如果使用了被@Deprecated 注解的代码则编译器将发出警告</li>
+<li><code>@SuppressWarnings</code>：表示关闭编译器警告信息</li>
+</ul>
+<h3 id="Override"><a href="#Override" class="headerlink" title="@Override"></a><code>@Override</code></h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Target(ElementType.METHOD)</span></span><br><span class="line"><span class="meta">@Rentention(RetentionPolicy.SOURCE)</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> Override&#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>用于修饰方法 编译时有效(源文件保留,编译后字节码不存在)</p>
+<h3 id="Deprecated"><a href="#Deprecated" class="headerlink" title="@Deprecated"></a><code>@Deprecated</code></h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Documented</span></span><br><span class="line"><span class="meta">@Retention(RetentionPolicy.RUNTIME)</span></span><br><span class="line"><span class="meta">@Target(value=&#123;CONSTRUCTOR, FIELD, LOCAL_VARIABLE, METHOD, PACKAGE, PARAMETER, TYPE&#125;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> Deprecated &#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>被文档化，能够保留到运行时，能够修饰构造方法、属性、局部变量、方法、包、参数、类型。这个注解的作用是告诉编译器被修饰的程序元素已被“废弃”，不再建议用户使用。</p>
+<h3 id="SuppressWarnings"><a href="#SuppressWarnings" class="headerlink" title="@SuppressWarnings"></a><code>@SuppressWarnings</code></h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Target(&#123;TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE&#125;)</span></span><br><span class="line"><span class="meta">@Retention(RetentionPolicy.SOURCE)</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> SuppressWarnings &#123;</span><br><span class="line">    String[] value();</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>修饰的程序元素包括类型、属性、方法、参数、构造器、局部变量，只能存活在源码时，取值为 String[]。</p>
+<p>告诉编译器忽略指定的警告信息</p>
+<p>取值范围</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>作用</th>
+<th>原描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>all</td>
+<td>抑制所有警告</td>
+<td>to suppress all warnings</td>
+</tr>
+<tr>
+<td>boxing</td>
+<td>抑制装箱、拆箱操作时候的警告</td>
+<td>to suppress warnings relative to boxing&#x2F;unboxing operations</td>
+</tr>
+<tr>
+<td>cast</td>
+<td>抑制映射相关的警告</td>
+<td>to suppress warnings relative to cast operations</td>
+</tr>
+<tr>
+<td>dep-ann</td>
+<td>抑制启用注释的警告</td>
+<td>to suppress warnings relative to deprecated annotation</td>
+</tr>
+<tr>
+<td>deprecation</td>
+<td>抑制过期方法警告</td>
+<td>to suppress warnings relative to deprecation</td>
+</tr>
+<tr>
+<td>fallthrough</td>
+<td>抑制确在 switch 中缺失 breaks 的警告</td>
+<td>to suppress warnings relative to missing breaks in switch statements</td>
+</tr>
+<tr>
+<td>finally</td>
+<td>抑制 finally 模块没有返回的警告</td>
+<td>to suppress warnings relative to finally block that don’t return</td>
+</tr>
+<tr>
+<td>hiding</td>
+<td>抑制与隐藏变数的区域变数相关的警告</td>
+<td>to suppress warnings relative to locals that hide variable（）</td>
+</tr>
+<tr>
+<td>incomplete-switch</td>
+<td>忽略没有完整的 switch 语句</td>
+<td>to suppress warnings relative to missing entries in a switch statement (enum case)</td>
+</tr>
+<tr>
+<td>nls</td>
+<td>忽略非 nls 格式的字符</td>
+<td>to suppress warnings relative to non-nls string literals</td>
+</tr>
+<tr>
+<td>null</td>
+<td>忽略对 null 的操作</td>
+<td>to suppress warnings relative to null analysis</td>
+</tr>
+<tr>
+<td>rawtype</td>
+<td>使用 generics 时忽略没有指定相应的类型</td>
+<td>to suppress warnings relative to un-specific types when using</td>
+</tr>
+<tr>
+<td>restriction</td>
+<td>抑制与使用不建议或禁止参照相关的警告</td>
+<td>to suppress warnings relative to usage of discouraged or</td>
+</tr>
+<tr>
+<td>serial</td>
+<td>忽略在 serializable 类中没有声明 serialVersionUID 变量</td>
+<td>to suppress warnings relative to missing serialVersionUID field for a serializable class</td>
+</tr>
+<tr>
+<td>static-access</td>
+<td>抑制不正确的静态访问方式警告</td>
+<td>to suppress warnings relative to incorrect static access</td>
+</tr>
+<tr>
+<td>synthetic-access</td>
+<td>抑制子类没有按最优方法访问内部类的警告</td>
+<td>to suppress warnings relative to unoptimized access from inner classes</td>
+</tr>
+<tr>
+<td>unchecked</td>
+<td>抑制没有进行类型检查操作的警告</td>
+<td>to suppress warnings relative to unchecked operations</td>
+</tr>
+<tr>
+<td>unqualified-field-access</td>
+<td>抑制没有权限访问的域的警告</td>
+<td>to suppress warnings relative to field access unqualified</td>
+</tr>
+<tr>
+<td>unused</td>
+<td>抑制没被使用过的代码的警告</td>
+<td>to suppress warnings relative to unused code</td>
+</tr>
+</tbody></table>
+<h2 id="元注解"><a href="#元注解" class="headerlink" title="元注解"></a>元注解</h2><h3 id="Target"><a href="#Target" class="headerlink" title="@Target"></a>@Target</h3><p>描述注解作用的范围:用于描述修饰的注解可以用在什么类型上</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> <span class="title class_">ElementType</span> &#123;</span><br><span class="line"></span><br><span class="line">    TYPE, <span class="comment">// 类、接口、枚举类</span></span><br><span class="line"></span><br><span class="line">    FIELD, <span class="comment">// 成员变量（包括：枚举常量）</span></span><br><span class="line"></span><br><span class="line">    METHOD, <span class="comment">// 成员方法</span></span><br><span class="line"></span><br><span class="line">    PARAMETER, <span class="comment">// 方法参数</span></span><br><span class="line"></span><br><span class="line">    CONSTRUCTOR, <span class="comment">// 构造方法</span></span><br><span class="line"></span><br><span class="line">    LOCAL_VARIABLE, <span class="comment">// 局部变量</span></span><br><span class="line"></span><br><span class="line">    ANNOTATION_TYPE, <span class="comment">// 注解类</span></span><br><span class="line"></span><br><span class="line">    PACKAGE, <span class="comment">// 可用于修饰：包</span></span><br><span class="line"></span><br><span class="line">    TYPE_PARAMETER, <span class="comment">// 类型参数，JDK 1.8 新增</span></span><br><span class="line"></span><br><span class="line">    TYPE_USE <span class="comment">// 使用类型的任何地方，JDK 1.8 新增</span></span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="Retention-RetentionTarget"><a href="#Retention-RetentionTarget" class="headerlink" title="@Retention &amp; @RetentionTarget"></a>@Retention &amp; @RetentionTarget</h3><p>Reteniton 注解用来限定那些被它所注解的注解类在注解到其他类上以后，可被保留到何时，一共有三种策略，定义在 RetentionPolicy 枚举中。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> <span class="title class_">RetentionPolicy</span> &#123;</span><br><span class="line"></span><br><span class="line">    SOURCE,    <span class="comment">// 源文件保留</span></span><br><span class="line">    CLASS,       <span class="comment">// 编译期保留，默认值</span></span><br><span class="line">    RUNTIME   <span class="comment">// 运行期保留，可通过反射去获取注解信息</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="Documented"><a href="#Documented" class="headerlink" title="@Documented"></a>@Documented</h3><p>描述在使用 javadoc 工具为类生成帮助文档时是否要保留其注解信息。</p>
+<h3 id="Inherited"><a href="#Inherited" class="headerlink" title="@Inherited"></a>@Inherited</h3><p>被它修饰的 Annotation 将具有继承性。如果某个类使用了被@Inherited 修饰的 Annotation，则其子类将自动具有该注解。</p>
+<h2 id="注解与反射接口"><a href="#注解与反射接口" class="headerlink" title="注解与反射接口"></a>注解与反射接口</h2><p>反射包 java.lang.reflect 下的 AnnitatedElement 接口提供这些方法.这里注意,只有注解被被定义为 RUNTIME 时才能运行时可见</p>
+<p>AnntatedElemented 是所有</p>
+<p>程序元素(Class,Method,Constructor)的父接口.程序通过反射获取某个类的 AnnotatedElement 对象就可以通过反射调用该对象的 Annotation 信息</p>
+<ul>
+<li><code>boolean isAnnotationPresent(Class&lt;?extends Annotstion&gt; annotationClass)</code></li>
+</ul>
+<p>​ 判断该程序元素上是否包含指定类型的注解 存在返回 True 否则返回 False，此方法会忽略注解对应的注解容器。</p>
+<ul>
+<li><code>&lt;T ectends Annotstion&gt; T getAnnotation(Class&lt;T&gt; annotationClass)</code></li>
+</ul>
+<p>​ 返回该程序元素上存在的,制定类型的的注解,如果指定类型的注解不存在,返回 null</p>
+<ul>
+<li><code>Annotation[] getAnnotions()</code></li>
+</ul>
+<p>​ 返回该程序上的所有注解,没有则返回长度为 0 的数组</p>
+<ul>
+<li><p><code>&lt;T extends Annotation&gt; T[] getAnnotationsByType(Class&lt;T&gt; annotationClass)</code></p>
+<p>​ 返回该程序指定类型的注解数组,如果不存在,则返回长度为 0 的数组</p>
+<p>​ <code>getAnnotationsByType</code>方法与 <code>getAnnotation</code>的区别在于，<code>getAnnotationsByType</code>会检测注解对应的重复注解容器。若程序元素为类，当前类上找不到注解，且该注解为可继承的，则会去父类上检测对应的注解。</p>
+<ul>
+<li><p><code>&lt;T extends Annotation&gt; T getDeclaredAnnotation(Class&lt;T&gt; annotationClass)</code></p>
+<p>返回存此元素上的所有注解. 忽略继承的注解</p>
+</li>
+</ul>
+</li>
+<li><p><code>&lt;T extends Annotation&gt; T[] getDeclaredAnnotationsByType(Class&lt;T&gt; annotationClass)</code></p>
+</li>
+</ul>
+<p>​ 返回存此元素上的指定类型的注解. 忽略继承的注解</p>
+<ul>
+<li><p><code>Annotation[] getDeclareAnnotations()</code></p>
+<p>​ 返回直接存在于此元素上的所有注解及注解对应的重复注解容器。与此接口中的其他方法不同，该方法将忽略继承的注解。如果没有注释直接存在于此元素上，则返回长度为零的一个数组。该方法的调用者可以随意修改返回的数组，而不会对其他调用者返回的数组产生任何影响。</p>
+</li>
+</ul>
+<h1 id="注解不支持继承"><a href="#注解不支持继承" class="headerlink" title="注解不支持继承"></a>注解不支持继承</h1><p>可以使用@inherited 注解使子类具有该注解</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://richardthunder.github.io">Richard Thunder</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://richardthunder.github.io/2024/08/29/java%E6%B3%A8%E8%A7%A3/">https://richardthunder.github.io/2024/08/29/java%E6%B3%A8%E8%A7%A3/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://richardthunder.github.io" target="_blank">草莓熊的博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Java%E6%B3%A8%E8%A7%A3/">Java注解</a></div><div class="post_share"><div class="social-share" data-image="/img/avatar.jpeg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/08/29/java%E5%BC%82%E5%B8%B8%E6%9C%BA%E5%88%B6/" title="java异常机制"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">java异常机制</div></div></a></div><div class="next-post pull-right"><a href="/2024/08/29/vim%20%E7%9B%AE%E5%BD%95%E6%A0%91/" title="vim 目录树"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">vim 目录树</div></div></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/img/avatar.jpeg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="avatar"/></div><div class="author-info__name">Richard Thunder</div><div class="author-info__description"></div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">12</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">14</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">6</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/richardthunder"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="https://github.com/richardthunder" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:yuetingpei888@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">这是草莓熊的个人博客</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content is-expand"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%B3%A8%E8%A7%A3"><span class="toc-number">1.</span> <span class="toc-text">注解</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%9C%E7%94%A8"><span class="toc-number">1.1.</span> <span class="toc-text">作用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#java-%E5%86%85%E7%BD%AE%E6%B3%A8%E8%A7%A3"><span class="toc-number">1.2.</span> <span class="toc-text">java 内置注解</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Override"><span class="toc-number">1.2.1.</span> <span class="toc-text">@Override</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Deprecated"><span class="toc-number">1.2.2.</span> <span class="toc-text">@Deprecated</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SuppressWarnings"><span class="toc-number">1.2.3.</span> <span class="toc-text">@SuppressWarnings</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%83%E6%B3%A8%E8%A7%A3"><span class="toc-number">1.3.</span> <span class="toc-text">元注解</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Target"><span class="toc-number">1.3.1.</span> <span class="toc-text">@Target</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Retention-RetentionTarget"><span class="toc-number">1.3.2.</span> <span class="toc-text">@Retention &amp; @RetentionTarget</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Documented"><span class="toc-number">1.3.3.</span> <span class="toc-text">@Documented</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Inherited"><span class="toc-number">1.3.4.</span> <span class="toc-text">@Inherited</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B3%A8%E8%A7%A3%E4%B8%8E%E5%8F%8D%E5%B0%84%E6%8E%A5%E5%8F%A3"><span class="toc-number">1.4.</span> <span class="toc-text">注解与反射接口</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%B3%A8%E8%A7%A3%E4%B8%8D%E6%94%AF%E6%8C%81%E7%BB%A7%E6%89%BF"><span class="toc-number">2.</span> <span class="toc-text">注解不支持继承</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/08/29/java%E5%9F%BA%E7%A1%80%E5%9F%BA%E6%9C%AC%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/" title="java基础基本数据类型">java基础基本数据类型</a><time datetime="2024-08-29T16:55:18.342Z" title="发表于 2024-08-30 00:55:18">2024-08-30</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/08/29/java%E5%9F%BA%E7%A1%80%E6%B3%9B%E5%9E%8B/" title="java基础泛型">java基础泛型</a><time datetime="2024-08-29T16:55:18.342Z" title="发表于 2024-08-30 00:55:18">2024-08-30</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/08/29/java%E5%BC%82%E5%B8%B8%E6%9C%BA%E5%88%B6/" title="java异常机制">java异常机制</a><time datetime="2024-08-29T16:55:18.342Z" title="发表于 2024-08-30 00:55:18">2024-08-30</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/08/29/java%E6%B3%A8%E8%A7%A3/" title="java注解">java注解</a><time datetime="2024-08-29T16:55:18.342Z" title="发表于 2024-08-30 00:55:18">2024-08-30</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/08/29/vim%20%E7%9B%AE%E5%BD%95%E6%A0%91/" title="vim 目录树">vim 目录树</a><time datetime="2024-08-29T16:55:18.342Z" title="发表于 2024-08-30 00:55:18">2024-08-30</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2024 By Richard Thunder</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.13.0"></script><script src="/js/main.js?v=4.13.0"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.8.8/dist/lazyload.iife.min.js"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=4.13.0"></script></div></div></body></html>
