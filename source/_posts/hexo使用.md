@@ -1,12 +1,18 @@
 ---
 title: Hexo使用入门
+tag: 
+  - hexo
+layout: page
+toc: true            # 是否生成目录
+indent: true         # 是否首行缩进   
+archive: true        # 是否显示在归档
+cover: false         # 是否显示封面
+mathjax: false       # 是否渲染公式
+pin: false           # 是否首页置顶
+top_meta: false      # 是否显示顶部信息
+bottom_meta: false   # 是否显示尾部信息
+sidebar: [toc]
 ---
-
-# Hexo 使用入门
-
-日期: 2022-08-28 19:28:54
-
-标签: hexo 使用方法
 
 ## hexo 安装
 
@@ -277,3 +283,41 @@ theme: next
 
 ### 设置主题
 [配置主题](https://theme-next.js.org/docs/theme-settings/)
+
+## 本地搜索功能
+安装
+
+```shell
+npm install hexo-generator-searchdb
+```
+
+_config.yml
+
+```shell
+search:
+  path: search.xml
+  field: post
+  content: true
+  format: html
+```
+
+_config.next.yml
+
+```shell
+# Local search
+# Dependencies: https://github.com/next-theme/hexo-generator-searchdb
+local_search:
+  enable: true
+  # Show top n results per article, show all results by setting to -1
+  top_n_per_article: 1
+  # Unescape html strings to the readable one.
+  unescape: false
+  # Preload the search data when the page loads.
+  preload: false
+
+  #修改
+codeblock:
+  copy_button:
+    enable: true
+
+```
