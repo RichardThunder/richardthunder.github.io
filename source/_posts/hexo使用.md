@@ -1,17 +1,24 @@
 ---
 title: Hexo使用入门
-tag: 
-  - hexo
 layout: page
-toc: true            # 是否生成目录
-indent: true         # 是否首行缩进   
-archive: true        # 是否显示在归档
-cover: false         # 是否显示封面
-mathjax: false       # 是否渲染公式
-pin: false           # 是否首页置顶
-top_meta: false      # 是否显示顶部信息
-bottom_meta: false   # 是否显示尾部信息
+toc: true # 是否生成目录
+indent: true # 是否首行缩进
+archive: true # 是否显示在归档
+cover: false # 是否显示封面
+mathjax: false # 是否渲染公式
+pin: false # 是否首页置顶
+top_meta: false # 是否显示顶部信息
+bottom_meta: false # 是否显示尾部信息
 sidebar: [toc]
+tag:
+  - hexo
+categories: Hexo
+keywords: Hexo使用
+date: { { date } }
+description:
+icons: [fas fa-fire red, fas fa-star green]
+---
+
 ---
 
 ## hexo 安装
@@ -282,16 +289,18 @@ theme: next
 ```
 
 ### 设置主题
+
 [配置主题](https://theme-next.js.org/docs/theme-settings/)
 
 ## 本地搜索功能
+
 安装
 
 ```shell
 npm install hexo-generator-searchdb
 ```
 
-_config.yml
+\_config.yml
 
 ```shell
 search:
@@ -301,7 +310,7 @@ search:
   format: html
 ```
 
-_config.next.yml
+\_config.next.yml
 
 ```shell
 # Local search
