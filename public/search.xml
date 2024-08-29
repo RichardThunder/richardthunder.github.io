@@ -1,0 +1,1483 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>3文件IO</title>
+    <url>/2024/04/07/3%E6%96%87%E4%BB%B6IO/</url>
+    <content><![CDATA[<h1 id="文件描述符"><a href="#文件描述符" class="headerlink" title="文件描述符"></a>文件描述符</h1><p>定义在&lt;unistd.h&gt;</p>
+<p>0 STDIN_FILENO</p>
+<p>1 STDOUT_FILENO</p>
+<p>2 STDERR_FILENO</p>
+<p>范围是 0–OPEN_MAX-1</p>
+<p>##open(),openat()</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">“<span class="meta">#<span class="keyword">include</span> <span class="string">&lt;fcntl.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">open</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *path, <span class="type">int</span> oflag,... <span class="comment">/* mode_t mode */</span>)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">openat</span><span class="params">(<span class="type">int</span> f d, <span class="type">const</span> <span class="type">char</span> *path, <span class="type">int</span> oflag, ... <span class="comment">/* mode_t mode */</span> )</span>;”</span><br><span class="line"><span class="comment">//成功则返回文件描述符,失败返回-1,</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="creat"><a href="#creat" class="headerlink" title="creat()"></a>creat()</h1><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;fcntl.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">creat</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *path, <span class="type">mode_t</span> mode)</span>;</span><br><span class="line"><span class="comment">//返回值：若成功，返回为只写打开的文件描述符；若出错，返回−1</span></span><br><span class="line"><span class="comment">//注意，此函数等效于：</span></span><br><span class="line">open(path, O_WRONLY｜O_CREAT｜O_TRUNC, mode);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>在早期的 UNIX 系统版本中，open 的第二个参数只能是 0、1 或 2。无法打开一个尚未存在的文件，因此需要另一个系统调用 creat 以创建新文件。</p>
+<p>现在，open 函数提供了选项 O_CREAT 和 O_TRUNC，于是也就不再需要单独的 creat 函数</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">//要创建一个临时文件，并要先写该文件，然后又读该文件</span></span><br><span class="line">open(path, O_RDWR｜O_CREAT｜O_TRUNC, mode);</span><br></pre></td></tr></table></figure>
+
+<h1 id="close"><a href="#close" class="headerlink" title="close()"></a>close()</h1><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">close</span> <span class="params">(<span class="type">int</span> fd)</span>；</span><br><span class="line"></span><br><span class="line"><span class="comment">//返回值：若成功，返回0；若出错，返回−1</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//关闭一个文件时还会释放该进程加在该文件上的所有记录锁。</span></span><br><span class="line"><span class="comment">//进程终止时内核自动关闭他打开的所有文件</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="lseek"><a href="#lseek" class="headerlink" title="lseek()"></a>lseek()</h1><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">//每个打开文件都有一个与其相关联的“当前文件偏移量”（current file offset）</span></span><br><span class="line"><span class="comment">//可以调用lseek显式地为一个打开文件设置偏移量。</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">off_t</span> <span class="title function_">lseek</span><span class="params">(<span class="type">int</span> fd, <span class="type">off_t</span> offset, <span class="type">int</span> whence)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//返回值：若成功，返回新的文件偏移量；若出错，返回为−1</span></span><br></pre></td></tr></table></figure>
+
+<p>对参数 offset 的解释与参数 whence 的值有关。</p>
+<p>•若 whence 是 SEEK_SET 0 ，则将该文件的偏移量设置为距文件开始处 offset 个字节。</p>
+<p>•若 whence 是 SEEK_CUR 1，则将该文件的偏移量设置为其当前值加 offset，offset 可为正或负。</p>
+<p>•若 whence 是 SEEK_END 2，则将该文件的偏移量设置为文件长度加 offset，offset 可正可负。</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">//若lseek成功执行，则返回新的文件偏移量，为此可以用下列方式确定打开文件的当前偏移量：</span></span><br><span class="line"></span><br><span class="line"><span class="type">off_t</span> currpos;</span><br><span class="line"></span><br><span class="line">currpos = lseek(fd, <span class="number">0</span>, SEEK_CUR);</span><br></pre></td></tr></table></figure>
+
+<p>这种方法也可用来确定所涉及的文件是否可以设置偏移量。如果文件描述符指向的是一个管道、FIFO 或网络套接字，则 lseek 返回 −1，并将 errno 设置为 ESPIPE。</p>
+<p><strong>因为偏移量可能是负值，所以在比较 lseek 的返回值时应当谨慎，不要测试它是否小于 0，而要测试它是否等于 −1</strong></p>
+<h1 id="read"><a href="#read" class="headerlink" title="read()"></a>read()</h1><p>调用 read 函数从打开文件中读数据。</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">ssize_t</span> <span class="title function_">read</span><span class="params">(<span class="type">int</span> fd, <span class="type">void</span> *buf, <span class="type">size_t</span> nbytes)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>返回值：读到的字节数，若已到文件尾，返回 0；若出错，返回 −1</p>
+<p>如 read 成功，则返回读到的字节数。如已到达文件的尾端，则返回 0。</p>
+<h1 id="write"><a href="#write" class="headerlink" title="write()"></a>write()</h1><p>调用 write 函数向打开文件写数据。</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">ssize_t</span> <span class="title function_">write</span><span class="params">(<span class="type">int</span> fd, <span class="type">const</span> <span class="type">void</span> *buf, <span class="type">size_t</span> nbytes)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>返回值：若成功，返回已写的字节数；若出错，返回 −1</p>
+<h1 id="文件共享"><a href="#文件共享" class="headerlink" title="文件共享"></a>文件共享</h1><p>“内核使用 3 种数据结构表示打开文件”</p>
+<p>“内核使用 3 种数据结构表示打开文件，它们之间的关系决定了在文件共享方面一个进程对另一个进程可能产生的影响。<br>（1）每个进程在进程表中都有一个记录项，记录项中包含一张打开文件描述符表，可将其视为一个矢量，每个描述符占用一项。与每个文件描述符相关联的是：<br>a．文件描述符标志（close_on_exec，参见图 3-7 和 3.14 节）；<br>b．指向一个文件表项的指针。<br>（2）内核为所有打开文件维持一张文件表。每个文件表项包含：<br>a．文件状态标志（读、写、添写、同步和非阻塞等，关于这些标志的更多信息参见 3.14 节）；<br>b．当前文件偏移量；<br>c．指向该文件 v 节点表项的指针。<br>（3）每个打开文件（或设备）都有一个 v 节点（v-node）结构。v 节点包含了文件类型和对此文件进行各种操作函数的指针。对于大多数文件，v 节点还包含了该文件的 i 节点（i-node，索引节点）。这些信息是在打开文件时从磁盘上读入内存的，所以，文件的所有相关信息都是随时可用的。例如，i 节点包含了文件的所有者、文件长度、指向文件实际数据块在磁盘上所在位置的指针等</p>
+<p><img src="/img/%E6%89%93%E5%BC%80%E6%96%87%E4%BB%B6%E7%9A%84%E5%86%85%E6%A0%B8%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84.png" alt="打开文件的内核数据结构"></p>
+<p><img src="/img/%E4%B8%A4%E4%B8%AA%E7%8B%AC%E7%AB%8B%E8%BF%9B%E7%A8%8B%E5%90%84%E8%87%AA%E6%89%93%E5%BC%80%E5%90%8C%E4%B8%80%E4%B8%AA%E6%96%87%E4%BB%B6.png" alt="两个独立进程各自打开同一个文件"></p>
+<h1 id="原子操作"><a href="#原子操作" class="headerlink" title="原子操作"></a>原子操作</h1><p>任何要求多于一个函数调用的操作都不是原子操作，因为在两个函数调用之间，内核有可能会临时挂起进程</p>
+<p>打开文件时设置 O_APPEND 标志,这样做使得内核在每次写操作之前，都将进程的当前偏移量设置到该文件的尾端处，于是在每次写之前就不再需要调用 lseek</p>
+<h2 id="pread-和-pwrite"><a href="#pread-和-pwrite" class="headerlink" title="pread 和 pwrite"></a>pread 和 pwrite</h2><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">ssize_t</span> <span class="title function_">pread</span><span class="params">(<span class="type">int</span> fd, <span class="type">void</span> *buf, <span class="type">size_t</span> nbytes, <span class="type">off_t</span> offset)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//返回值：读到的字节数，若已到文件尾，返回0；若出错，返回−1</span></span><br><span class="line"></span><br><span class="line"><span class="type">ssize_t</span> <span class="title function_">pwrite</span><span class="params">(<span class="type">int</span> fd, <span class="type">const</span> <span class="type">void</span> *buf, <span class="type">size_t</span> nbytes, <span class="type">off_t</span> offset)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//返回值：若成功，返回已写的字节数；若出错，返回−1</span></span><br></pre></td></tr></table></figure>
+
+<p>调用 pread 相当于调用 lseek 后调用 read，但是 pread 又与这种顺序调用有下列重要区别。</p>
+<p>•调用 pread 时，无法中断其定位和读操作。</p>
+<p>•不更新当前文件偏移量。</p>
+<p>调用 pwrite 相当于调用 lseek 后调用 write，但也与它们有类似的区别。</p>
+<h1 id="函数-dup-和-dup2"><a href="#函数-dup-和-dup2" class="headerlink" title="函数 dup 和 dup2"></a>函数 dup 和 dup2</h1><p>复制现有的文件描述符</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">dup</span><span class="params">(<span class="type">int</span> fd)</span>;</span><br><span class="line"><span class="comment">//由dup返回的新文件描述符一定是当前可用文件描述符中的最小数值</span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">dup2</span><span class="params">(<span class="type">int</span> fd, <span class="type">int</span> fd2)</span>;</span><br><span class="line"><span class="comment">//用fd2参数指定新描述符的值。</span></span><br><span class="line"><span class="comment">//如果fd2已经打开，则先将其关闭。</span></span><br><span class="line"><span class="comment">//如若fd等于fd2，则dup2返回fd2，而不关闭它。</span></span><br><span class="line"><span class="comment">//否则，fd2的FD_CLOEXEC文件描述符标志就被清除，这样fd2在进程调用exec时是打开状态</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">//两函数的返回值：若成功，返回新的文件描述符；若出错，返回−1</span></span><br></pre></td></tr></table></figure>
+
+<p>这些函数返回的新文件描述符与参数 fd 共享同一个文件表项</p>
+<p><img src="/img/dup(1)%E5%90%8E%E7%9A%84%E5%86%85%E6%A0%B8%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-4254365.png" alt="dup(1)后的内核数据结构"></p>
+<h1 id="函数-sync、fsync-和-fdatasync"><a href="#函数-sync、fsync-和-fdatasync" class="headerlink" title="函数 sync、fsync 和 fdatasync"></a>函数 sync、fsync 和 fdatasync</h1><p>为了保证磁盘上实际文件系统与缓冲区中内容的一致性，UNIX 系统提供了 sync、fsync 和 fdatasync 三个函数。</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">fsync</span><span class="params">(<span class="type">int</span> fd)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">fdatasync</span><span class="params">(<span class="type">int</span> fd)</span>;</span><br><span class="line"><span class="comment">//返回值：若成功，返回0；若出错，返回−1</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">sync</span><span class="params">(<span class="type">void</span>)</span>;</span><br><span class="line"><span class="comment">//sync只是将所有修改过的块缓冲区排入写队列，然后就返回，它并不等待实际写磁盘操作结束。</span></span><br></pre></td></tr></table></figure>
+
+<p>称为 update 的系统守护进程周期性地调用（一般每隔 30 秒）sync 函数。这就保证了定期冲洗（flush）内核的块缓冲区。命令 sync(1)也调用 sync 函数。</p>
+<p>fsync 函数只对由文件描述符 fd 指定的一个文件起作用，并且等待写磁盘操作结束才返回。确保修改过的块立即写到磁盘上.</p>
+<p>fdatasync 函数类似于 fsync，但它只影响文件的数据部分,fsync 还会同步文件的属性</p>
+<h1 id="函数-fcntl"><a href="#函数-fcntl" class="headerlink" title="函数 fcntl"></a>函数 fcntl</h1><p>file_control</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">fcntl函数可以改变已经打开文件的属性。</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;fcntl.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">fcntl</span><span class="params">(<span class="type">int</span> fd, <span class="type">int</span> cmd, ... <span class="comment">/* int arg */</span>)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//返回值：若成功，则依赖于cmd（见下）；若出错，返回−1</span></span><br></pre></td></tr></table></figure>
+
+<p>fcntl 函数有以下 5 种功能。<br>（1）复制一个已有的描述符（cmd&#x3D;F_DUPFD 或 F_DUPFD_CLOEXEC）。<br>（2）获取&#x2F;设置文件描述符标志（cmd&#x3D;F_GETFD 或 F_SETFD）。<br>（3）获取&#x2F;设置文件状态标志（cmd&#x3D;F_GETFL 或 F_SETFL）。<br>（4）获取&#x2F;设置异步 I&#x2F;O 所有权（cmd&#x3D;F_GETOWN 或 F_SETOWN）。<br>（5）获取&#x2F;设置记录锁（cmd&#x3D;F_GETLK、F_SETLK 或 F_SETLKW）。</p>
+<p>F_DUPFD: 复制 fd,新描述符是大于等于 3 的未使用的最小值,并且与 fd 共享同一文件表项.清除文件描述符标志(FD_CLOEXEC),在 exec 时仍然保持有效</p>
+<p>F_DUPFD_CLOEXEC 设置与新描述符关联的 FD_CLOEXEC 文件描述符标志的值，返回新文件描述符。</p>
+<blockquote>
+<p>close_on_exec:是一个进程所有文件描述符（文件句柄）的位图标志，每个比特位代表一个打开的文件描述符的标志位，用于确定在调用系统调用 execve()时是否需要关闭文件的句柄。</p>
+<p>此标志设置为 0(系统默认，在 exec 时不关闭)或 1(在 exec 时关闭)</p>
+<p>fcntl(fd, F_SETFD, FD_CLOEXEC);</p>
+<p>&#x2F;&#x2F;or</p>
+<p>fcntl(fd, F_SETFD, 0);</p>
+</blockquote>
+<p>F_GETFD 返回文件描述符标志</p>
+<p>F_SETFD 对于 fd 设置文件描述符标志。新标志值按第 3 个参数（取为整型值）设置. 将此标志(FD_CLOEXEC)设置为 0（系统默认，在 exec 时不关闭）或 1（在 exec 时关闭）</p>
+<p>F_GETFL 对应于 fd 的文件状态标志作为函数值返回</p>
+<p><img src="/img/%E6%96%87%E4%BB%B6%E7%8A%B6%E6%80%81%E6%A0%87%E5%BF%97-4453499.png" alt="文件状态标志"></p>
+<p>F_SETFL 将文件状态标志设置为第 3 个参数的值（取为整型值）。可以更改的几个标志是：O_APPEND、O_NONBLOCK、O_SYNC、O_DSYNC、O_RSYNC、O_FSYNC 和 O_ASYNC</p>
+<p>F_GETOWN 获取当前接收 SIGIO 和 SIGURG 信号的进程 ID 或进程组 ID。</p>
+<p>F_SETOWN 设置接收 SIGIO 和 SIGURG 信号的进程 ID 或进程组 ID。正的 arg 指定一个进程 ID，负的 arg 表示等于 arg 绝对值的一个进程组 ID</p>
+<blockquote>
+<p>fcntl 返回值与命令相关,出错返回-1,成功则 F_DUPFD 返回新文件描述符,F_GETFD,F_GETFL 返回相应的标志,F_GETOWN 返回正的进程 ID 或者负的进程组 ID</p>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">flags | = O_SYNC; <span class="comment">// 打开标志位 IO立即刷新</span></span><br><span class="line">flags &amp;| = FLAGS; <span class="comment">// turn FLAGS off</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="函数-ioctl"><a href="#函数-ioctl" class="headerlink" title="函数 ioctl"></a>函数 ioctl</h1><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span>　　<span class="comment">/* System V */</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/ioctl.h&gt;</span> <span class="comment">/* BSD and Linux */</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">ioctl</span><span class="params">(<span class="type">int</span> fd, <span class="type">int</span> request, ...)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//返回值：若出错，返回−1；若成功，返回其他值</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="习题-3-6"><a href="#习题-3-6" class="headerlink" title="习题 3.6"></a>习题 3.6</h2><p>果使用追加标志打开一个文件以便读、写，能否仍用 lseek 在任一位置开始读？能否用 lseek 更新文件中任一部分的数据？请编写一段程序验证</p>
+<p>答: 以 O_APPEND 方式打开文件, 会在每次写文件时设置文件偏移量为文件长度,</p>
+<p>​ 尽管 lseek 会将文件表项中的偏移量更新,调用 read.会读取 lseek 设置的偏移量处. 但是每次写入还是会写在文件长度的偏移量处.(读在自定义的偏移量, 写在文件最后)</p>
+]]></content>
+      <categories>
+        <category>UNIX环境高级编程</category>
+      </categories>
+      <tags>
+        <tag>APUE</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>4文件和目录</title>
+    <url>/2024/04/07/4%E6%96%87%E4%BB%B6%E5%92%8C%E7%9B%AE%E5%BD%95/</url>
+    <content><![CDATA[<h1 id="函数stat-fstat-fstatat-lstat"><a href="#函数stat-fstat-fstatat-lstat" class="headerlink" title="函数stat,fstat,fstatat,lstat"></a>函数stat,fstat,fstatat,lstat</h1><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">stat</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *<span class="keyword">restrict</span> pathname, <span class="keyword">struct</span> stat *<span class="keyword">restrict</span> buf)</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">fstat</span><span class="params">(<span class="type">int</span> fd, <span class="keyword">struct</span> stat *buf)</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">lstat</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *<span class="keyword">restrict</span> pathname, <span class="keyword">struct</span> stat *<span class="keyword">restrict</span> buf)</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">fstatat</span><span class="params">(<span class="type">int</span> fd, <span class="type">const</span> <span class="type">char</span> *<span class="keyword">restrict</span> pathname, <span class="keyword">struct</span> stat *<span class="keyword">restrict</span> buf, <span class="type">int</span> flag)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>stat使用pathname打开.</p>
+<p>fstat使用fd打开</p>
+<p>lstat 当命名的文件是一个符号链接时，lstat返回该符号链接的有关信息，而不是由该符号链接引用的文件的信息</p>
+<p>buf是一个结构体</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">stat</span> &#123;</span></span><br><span class="line"></span><br><span class="line"><span class="type">mode_t</span>　　　　　　　 st_mode;　　 <span class="comment">/* file type &amp; mode (permissions) */</span></span><br><span class="line"><span class="type">ino_t</span>　　　　　　　　st_ino;　　　 <span class="comment">/* i-node number (serial number) */</span></span><br><span class="line"><span class="type">dev_t</span>　　　　　　　　st_dev;　　　 <span class="comment">/* device number (file system) */</span></span><br><span class="line"><span class="type">dev_t</span>　　　　　　　　st_rdev;　　 <span class="comment">/* device number for special files */</span></span><br><span class="line"><span class="type">nlink_t</span>　　　　　　　st_nlink;　　<span class="comment">/* number of links */</span></span><br><span class="line"><span class="type">uid_t</span>　　　　　　　　st_uid;　　　 <span class="comment">/* user ID of owner */</span></span><br><span class="line"><span class="type">gid_t</span>　　　　　　　　st_gid;　　　 <span class="comment">/* group ID of owner */</span></span><br><span class="line"><span class="type">off_t</span>　　　　　　　　st_size;　　 <span class="comment">/* size in bytes, for regular files */</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">timespec</span>　　 <span class="title">st_atime</span>;</span>　　<span class="comment">/* time of last access */</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">timespec</span>　　 <span class="title">st_mtime</span>;</span>　　<span class="comment">/* time of last modification */</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">timespec</span>　　 <span class="title">st_ctime</span>;</span>　　<span class="comment">/* time of last file status change */</span></span><br><span class="line"><span class="type">blksize_t</span>　　　　　　st_blksize;　<span class="comment">/* best I/O block size */</span></span><br><span class="line"><span class="type">blkcnt_t</span>　　　　　　 st_blocks;　 <span class="comment">/* number of disk blocks allocated */</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="comment">//timespec结构类型按照秒和纳秒定义了时间，至少包括下面两个字段：</span></span><br><span class="line"><span class="type">time_t</span> tv_sec;</span><br><span class="line"><span class="type">long</span> tv_nsec;</span><br></pre></td></tr></table></figure>
+
+<h1 id="文件类型"><a href="#文件类型" class="headerlink" title="文件类型"></a>文件类型</h1><ul>
+<li>普通文件（regular file） 对普通文件内容的解释由处理该文件的应用程序进行。</li>
+<li>目录文件（directory file）。这种文件包含了其他文件的名字以及指向与这些文件有关信息的指针。对一个目录文件具有读权限的任一进程都可以读该目录的内容，但只有内核可以直接写目录文件。进程必须使用本章介绍的函数才能更改目录。</li>
+<li>块特殊文件（block special file）。这种类型的文件提供对设备（如磁盘）带缓冲的访问，每次访问以固定长度为单位进行。 <!--注意，FreeBSD不再支持块特殊文件。对设备的所有访问需要通过字符特殊文件进行--></li>
+<li>FIFO。这种类型的文件用于进程间通信，有时也称为命名管道（named pipe）</li>
+<li>套接字（socket）。这种类型的文件用于进程间的网络通信。套接字也可用于在一台宿主机上进程之间的非网络通信。</li>
+<li>符号链接（symbolic link）。这种类型的文件指向另一个文件。</li>
+</ul>
+<p>使用宏来确定文件类型</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> S_ISBLK(m)         <span class="comment">/* block special */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> S_ISCHR(m)         <span class="comment">/* char special */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> S_ISDIR(m)          <span class="comment">/* directory */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> S_ISFIFO(m)         <span class="comment">/* fifo or socket */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> S_ISREG(m)          <span class="comment">/* regular file */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> S_ISLNK(m)          <span class="comment">/* symbolic link */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> S_ISSOCK(m)        <span class="comment">/* socket */</span></span></span><br></pre></td></tr></table></figure>
+
+<h1 id="设置用户ID和设置组ID-SUID-SGID"><a href="#设置用户ID和设置组ID-SUID-SGID" class="headerlink" title="设置用户ID和设置组ID(SUID,SGID)"></a>设置用户ID和设置组ID(SUID,SGID)</h1><p><img src="/img/image-20230210051134439-5977097.png" alt="image-20230210051134439"></p>
+<p>通常，有效用户ID等于实际用户ID，有效组ID等于实际组ID</p>
+<p>每个文件有一个所有者和组所有者，所有者由stat结构中的st_uid指定，组所有者则由st_gid指定。</p>
+<h1 id="文件访问权限"><a href="#文件访问权限" class="headerlink" title="文件访问权限"></a>文件访问权限</h1><p>st_mode值也包含了对文件的访问权限位</p>
+<p><img src="/img/image-20230210051346280-5977227.png" alt="image-20230210051346280"></p>
+<p>进程每次打开、创建或删除一个文件时，内核就进行文件访问权限测试</p>
+<p>这种测试可能涉及文件的所有者（st_uid和st_gid）[文件性质]、</p>
+<p><strong>进程的有效ID（有效用户ID和有效组ID）</strong>以及进程的附属组ID（若支持的话）[进程性质]</p>
+<p>测试具体如下:</p>
+<ol>
+<li>若进程的有效用户ID是0（超级用户），则允许访问。这给予了超级用户对整个文件系统进行处理的最充分的自由。</li>
+<li>若进程的有效用户ID等于文件的所有者ID（也就是进程拥有此文件），那么如果所有者适当的访问权限位被设置，则允许访问；否则拒绝访问。适当的访问权限位指的是，若进程为读而打开该文件，则用户读位应为1；若进程为写而打开该文件，则用户写位应为1；若进程将执行该文件，则用户执行位应为1。</li>
+<li>若进程的有效组ID或进程的附属组ID之一等于文件的组ID，那么如果组适当的访问权限位被设置，则允许访问；否则拒绝访问。</li>
+<li>若其他用户适当的访问权限位被设置，则允许访问；否则拒绝访问</li>
+</ol>
+<h1 id="新文件和目录的所有权"><a href="#新文件和目录的所有权" class="headerlink" title="新文件和目录的所有权"></a>新文件和目录的所有权</h1><p>新文件的<strong>用户ID</strong>设置为<strong>进程的有效用户ID</strong>。</p>
+<p>关于<strong>组ID</strong>，POSIX.1允许实现选择下列之一作为新文件的组ID。</p>
+<p>（1）新文件的组ID可以是进程的有效组ID。</p>
+<p>（2）新文件的组ID可以是它所在目录的组ID。</p>
+<p>根据系统不同,</p>
+<p>FreeBSD 8.0和Mac OS X 10.6.8总是使用目录的组ID作为新文件的组ID</p>
+<p>对于 Linux 3.2.0 和Solaris 10，如果该目录的组ID位已经被设置，则新文件的组ID设置为目录的组ID；否则新文件的组ID设置为进程的有效组ID</p>
+<h1 id="函数access和faccessat"><a href="#函数access和faccessat" class="headerlink" title="函数access和faccessat"></a>函数access和faccessat</h1><p>进程也希望按其<strong>实际用户ID和实际组ID</strong>来<strong>测试其访问能力</strong>。</p>
+<p>access和faccessat函数是按实际用户ID和实际组ID进行访问权限测试的。（该测试也分成4步，这与4.5节中所述的一样，但将有效改为实际。）</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">access</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *pathname, <span class="type">int</span> mode)</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">faccessat</span><span class="params">(<span class="type">int</span> fd, <span class="type">const</span> <span class="type">char</span> *pathname, <span class="type">int</span> mode, <span class="type">int</span> flag)</span>;</span><br><span class="line"><span class="comment">//两个函数的返回值：若成功，返回0；若出错，返回-1</span></span><br></pre></td></tr></table></figure>
+
+<p>如果测试文件是否已经存在，mode就为F_OK；否则mode是图4-7中所列常量的按位或。</p>
+<p><img src="/img/image-20230210053210859-5978332.png" alt="image-20230210053210859"></p>
+<p>faccessat函数与access函数在下面两种情况下是相同的：一种是pathname参数为绝对路径，另一种是fd参数取值为AT_FDCWD而pathname参数为相对路径。否则，faccessat计算相对于打开目录（由fd参数指向）的pathname。</p>
+<p>flag参数可以用于改变faccessat的行为，如果flag设置为AT_EACCESS，访问检查用的是调用进程的<strong>有效用户ID和有效组ID</strong>，而不是实际用户ID和实际组ID。</p>
+<h1 id="函数umask"><a href="#函数umask" class="headerlink" title="函数umask"></a>函数umask</h1><p>umask 函数为进程设置文件模式创建屏蔽字，并返回之前的值。（这是少数几个没有出错返回函数中的一个。）</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">mode_t</span> <span class="title function_">umask</span><span class="params">(<span class="type">mode_t</span> cmask)</span>;</span><br><span class="line"></span><br><span class="line">返回值：之前的文件模式创建屏蔽字</span><br></pre></td></tr></table></figure>
+
+<p>其中，参数cmask是由图4-6中列出的9个常量（S_IRUSR、S_IWUSR等）中的若干个按位“或”构成的。</p>
+<p><img src="/img/image-20230210051346280-5977227.png" alt="image-20230210051346280"></p>
+<p>在进程创建一个新文件或新目录时，就一定会使用文件模式创建屏蔽字</p>
+<p>在文件模式创建屏蔽字中为1的位，在文件mode中的相应位一定被关闭。</p>
+<p>用户可以设置umask值以控制他们所创建文件的默认权限。该值表示成八进制数，一位代表一种要屏蔽的权限</p>
+<p><img src="/img/image-20230210065431241-5983272.png" alt="image-20230210065431241"></p>
+<h1 id="函数chmod-fchmod-fchmodat"><a href="#函数chmod-fchmod-fchmodat" class="headerlink" title="函数chmod,fchmod,fchmodat"></a>函数chmod,fchmod,fchmodat</h1><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">chmod</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *pathname, <span class="type">mode_t</span> mode)</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">fchmod</span><span class="params">(<span class="type">int</span> fd, <span class="type">mode_t</span> mode)</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">fchmodat</span><span class="params">(<span class="type">int</span> fd, <span class="type">const</span> <span class="type">char</span> *pathname, <span class="type">mode_t</span> mode, <span class="type">int</span> flag)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//3个函数返回值：若成功，返回0；若出错，返回−1</span></span><br></pre></td></tr></table></figure>
+
+<p>chmod 函数在指定的文件上进行操作，而 fchmod 函数则对已打开的文件进行操作。</p>
+<p>fchmodat函数与chmod函数在下面两种情况下是相同的：一种是pathname参数为绝对路径，另一种是fd参数取值为AT_FDCWD而pathname参数为相对路径。否则，fchmodat计算相对于打开目录（由fd参数指向）的pathname。</p>
+<p>flag参数可以用于改变fchmodat的行为，当设置了AT_SYMLINK_NOFOLLOW标志时，fchmodat并不会跟随符号链接</p>
+<p>为了改变一个文件的权限位，进程的有效用户ID必须等于文件的所有者ID，或者该进程必须具有超级用户权限</p>
+<p><img src="/img/image-20230210070300001-5983781.png" alt="image-20230210070300001"></p>
+<p>Mode &#x3D;&#x3D; 按位或运算</p>
+<h1 id="粘着位"><a href="#粘着位" class="headerlink" title="粘着位"></a>粘着位</h1><p>S_ISVTX位 也称为保存正文位（saved-text bit）</p>
+<p>Single UNIX Specification允许针对目录设置粘着位。如果对一个目录设置了粘着位，只有对该目录具有写权限的用户并且满足下列条件之一，才能删除或重命名该目录下的文件：</p>
+<p>•拥有此文件；</p>
+<p>•拥有此目录；</p>
+<p>•是超级用户。</p>
+<p>常用于&#x2F;tmp, &#x2F;var&#x2F;tmp</p>
+<p>任一用户（用户、组和其他）对这两个目录的权限通常都是读、写和执行。但是用户不应能删除或重命名属于其他人的文件，为此在这两个目录的文件模式中都设置了粘着位。</p>
+<h1 id="函数chown-fchown-fchownat-lchown"><a href="#函数chown-fchown-fchownat-lchown" class="headerlink" title="函数chown,fchown,fchownat,lchown"></a>函数chown,fchown,fchownat,lchown</h1><p>用于更改文件的用户ID和组ID。如果两个参数owner或group中的任意一个是-1，则对应的ID不变。</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">chown</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *pathname, <span class="type">uid_t</span> owner, <span class="type">gid_t</span> group)</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">fchown</span><span class="params">(<span class="type">int</span> fd, <span class="type">uid_t</span> owner, <span class="type">gid_t</span> group)</span>;</span><br><span class="line"><span class="comment">//fchown函数改变fd参数指向的打开文件的所有者</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">fchownat</span><span class="params">(<span class="type">int</span> fd, <span class="type">const</span> <span class="type">char</span> *pathname, <span class="type">uid_t</span> owner, <span class="type">gid_t</span> group, <span class="type">int</span> flag)</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">lchown</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *pathname, <span class="type">uid_t</span> owner, <span class="type">gid_t</span> group)</span>;</span><br><span class="line"><span class="comment">//4个函数的返回值：若成功，返回0；若出错，返回-1</span></span><br></pre></td></tr></table></figure>
+
+<p>在符号链接情况下，lchown和fchownat（设置了AT_SYMLINK_NOFOLLOW标志）更改符号链接本身的所有者，而不是该符号链接所指向的文件的所有者。</p>
+<ul>
+<li>fchownat函数与chown或者lchown函数在下面两种情况下是相同的：<ul>
+<li>一种是pathname参数为绝对路径，</li>
+<li>另一种是fd参数取值为AT_FDCWD而pathname参数为相对路径。</li>
+</ul>
+</li>
+</ul>
+<p>​	在这两种情况下，如果flag参数中设置了AT_SYMLINK_NOFOLLOW标志，fchownat与lchown行为相同，</p>
+<ul>
+<li>如果flag参数中<strong>清除了AT_SYMLINK_NOFOLLOW标志</strong>，则fchownat与chown行为相同。</li>
+<li>如果fd参数设置为打开目录的文件描述符，并且pathname参数是一个相对路径名，fchownat函数计算相对于打开目录的pathname。</li>
+</ul>
+<p>若_POSIX_CHOWN_RESTRICTED对指定的文件生效，则</p>
+<p>（1）只有超级用户进程能更改该文件的用户ID；(普通用户不能更改其他用户文件的用户ID)</p>
+<p>（2）如果进程拥有此文件（其有效用户ID等于该文件的用户ID），参数owner等于-1或文件的用户ID，并且参数group等于进程的有效组ID或进程的附属组ID之一，那么一个非超级用户进程可以更改该文件的组ID。(你可以更改你所拥用的文件的组ID，但只能改到你所属的组。)</p>
+]]></content>
+      <categories>
+        <category>UNIX环境高级编程</category>
+      </categories>
+      <tags>
+        <tag>APUE</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>CMake</title>
+    <url>/2024/04/07/CMake/</url>
+    <content><![CDATA[<h1 id="CMake"><a href="#CMake" class="headerlink" title="CMake"></a>CMake</h1><p>教程: <a href="https://www.hahack.com/codes/cmake/">https://www.hahack.com/codes/cmake/</a></p>
+<p>仓库:<a href="https://github.com/wzpan/cmake-demo.git">https://github.com/wzpan/cmake-demo.git</a></p>
+<ol>
+<li>编写 CMake 配置文件 CMakeLists.txt 。</li>
+<li>执行命令 <code>cmake PATH</code> 或者 <code>ccmake PATH</code> 生成 Makefile（<code>ccmake</code> 和 <code>cmake</code> 的区别在于前者提供了一个交互式的界面）。其中， <code>PATH</code> 是 CMakeLists.txt 所在的目录。</li>
+<li>使用 <code>make</code> 命令进行编译。</li>
+</ol>
+<figure class="highlight cmake"><table><tr><td class="code"><pre><span class="line"><span class="comment"># CMake 最低版本号要求</span></span><br><span class="line"><span class="keyword">cmake_minimum_required</span> (VERSION <span class="number">2.8</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 项目信息</span></span><br><span class="line"><span class="keyword">project</span> (Demo1)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 指定生成目标</span></span><br><span class="line"><span class="keyword">add_executable</span>(Demo main.cc)</span><br></pre></td></tr></table></figure>
+
+<h2 id="多文件"><a href="#多文件" class="headerlink" title="多文件"></a>多文件</h2><figure class="highlight cmake"><table><tr><td class="code"><pre><span class="line"><span class="comment"># CMake 最低版本号要求</span></span><br><span class="line"><span class="keyword">cmake_minimum_required</span> (VERSION <span class="number">2.8</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 项目信息</span></span><br><span class="line"><span class="keyword">project</span> (Demo2)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 指定生成目标</span></span><br><span class="line"><span class="keyword">add_executable</span>(Demo main.cc MathFunctions.cc)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">#使用目录变量</span></span><br><span class="line"><span class="comment">#aux_source_directory(&lt;dir&gt; &lt;variable&gt;)</span></span><br><span class="line"><span class="comment">#该命令会查找指定目录下的所有源文件，然后将结果存进指定变量名</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 查找当前目录下的所有源文件</span></span><br><span class="line"><span class="comment"># 并将名称保存到 DIR_SRCS 变量</span></span><br><span class="line"><span class="keyword">cmake_minimum_required</span>(VERSION <span class="number">2.8</span>)</span><br><span class="line"><span class="keyword">aux_source_directory</span>(. DIR_SRCS)</span><br><span class="line"><span class="keyword">project</span>(demo2)</span><br><span class="line"><span class="keyword">add_executable</span>(Demo <span class="variable">$&#123;DIR_SRCS&#125;</span>)</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h1 id="多个目录-多文件"><a href="#多个目录-多文件" class="headerlink" title="多个目录,多文件"></a>多个目录,多文件</h1><p>需要在根目录和子目录分别编写 CMakeLists.txt</p>
+<p>将子目录编译成静态库调用</p>
+<figure class="highlight cmake"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 查找当前目录下的所有源文件</span></span><br><span class="line"><span class="comment"># 并将名称保存到 DIR_LIB_SRCS 变量</span></span><br><span class="line"><span class="keyword">aux_source_directory</span>(. DIR_LIB_SRCS)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 生成链接库</span></span><br><span class="line"><span class="keyword">add_library</span> (MathFunctions <span class="variable">$&#123;DIR_LIB_SRCS&#125;</span>)</span><br><span class="line"><span class="comment">#在该文件中使用命令 add_library 将 src 目录中的源文件编译为静态链接库。</span></span><br></pre></td></tr></table></figure>
+
+<p>主目录</p>
+<figure class="highlight cmake"><table><tr><td class="code"><pre><span class="line"><span class="comment"># CMake 最低版本号要求</span></span><br><span class="line"><span class="keyword">cmake_minimum_required</span> (VERSION <span class="number">2.8</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 项目信息</span></span><br><span class="line"><span class="keyword">project</span> (Demo3)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 查找当前目录下的所有源文件</span></span><br><span class="line"><span class="comment"># 并将名称保存到 DIR_SRCS 变量</span></span><br><span class="line"><span class="keyword">aux_source_directory</span>(. DIR_SRCS)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 添加 math 子目录</span></span><br><span class="line"><span class="keyword">add_subdirectory</span>(<span class="keyword">math</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 指定生成目标</span></span><br><span class="line"><span class="keyword">add_executable</span>(Demo main.cc)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 添加链接库</span></span><br><span class="line"><span class="keyword">target_link_libraries</span>(Demo MathFunctions)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h1 id="自定义编译选项"><a href="#自定义编译选项" class="headerlink" title="自定义编译选项"></a>自定义编译选项</h1><p>可以将 MathFunctions 库设为一个可选的库，如果该选项为 <code>ON</code> ，就使用该库定义的数学函数来进行运算。否则就调用标准库中的数学函数库。</p>
+<figure class="highlight cmake"><table><tr><td class="code"><pre><span class="line"><span class="comment"># CMake 最低版本号要求</span></span><br><span class="line"><span class="keyword">cmake_minimum_required</span> (VERSION <span class="number">2.8</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 项目信息</span></span><br><span class="line"><span class="keyword">project</span> (Demo4)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 加入一个配置头文件，用于处理 CMake 对源码的设置</span></span><br><span class="line"><span class="keyword">configure_file</span> (</span><br><span class="line">  <span class="string">&quot;$&#123;PROJECT_SOURCE_DIR&#125;/config.h.in&quot;</span></span><br><span class="line">  <span class="string">&quot;$&#123;PROJECT_BINARY_DIR&#125;/config.h&quot;</span></span><br><span class="line">  )</span><br><span class="line"></span><br><span class="line"><span class="comment"># 是否使用自己的 MathFunctions 库</span></span><br><span class="line"><span class="keyword">option</span> (USE_MYMATH</span><br><span class="line">       <span class="string">&quot;Use provided math implementation&quot;</span> <span class="keyword">ON</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 是否加入 MathFunctions 库</span></span><br><span class="line"><span class="keyword">if</span> (USE_MYMATH)</span><br><span class="line">  <span class="keyword">include_directories</span> (<span class="string">&quot;$&#123;PROJECT_SOURCE_DIR&#125;/math&quot;</span>)</span><br><span class="line">  <span class="keyword">add_subdirectory</span> (<span class="keyword">math</span>)</span><br><span class="line">  <span class="keyword">set</span> (EXTRA_LIBS <span class="variable">$&#123;EXTRA_LIBS&#125;</span> MathFunctions)</span><br><span class="line"><span class="keyword">endif</span> (USE_MYMATH)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 查找当前目录下的所有源文件</span></span><br><span class="line"><span class="comment"># 并将名称保存到 DIR_SRCS 变量</span></span><br><span class="line"><span class="keyword">aux_source_directory</span>(. DIR_SRCS)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 指定生成目标</span></span><br><span class="line"><span class="keyword">add_executable</span>(Demo <span class="variable">$&#123;DIR_SRCS&#125;</span>)</span><br><span class="line"><span class="keyword">target_link_libraries</span> (Demo  <span class="variable">$&#123;EXTRA_LIBS&#125;</span>)</span><br></pre></td></tr></table></figure>
+
+<h1 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h1><p>首先先在 math&#x2F;CMakeLists.txt 文件里添加下面两行：</p>
+<figure class="highlight cmake"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 指定 MathFunctions 库的安装路径</span></span><br><span class="line"><span class="keyword">install</span> (TARGETS MathFunctions DESTINATION bin)</span><br><span class="line"><span class="keyword">install</span> (FILES MathFunctions.h DESTINATION <span class="keyword">include</span>)</span><br></pre></td></tr></table></figure>
+
+<p>指明 MathFunctions 库的安装路径</p>
+<p>修改根目录的 CMakeLists 文件，在末尾添加下面几行：</p>
+<figure class="highlight cmake"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 指定安装路径</span></span><br><span class="line"><span class="keyword">install</span> (TARGETS Demo DESTINATION bin)</span><br><span class="line"><span class="keyword">install</span> (FILES <span class="string">&quot;$&#123;PROJECT_BINARY_DIR&#125;/config.h&quot;</span></span><br><span class="line">         DESTINATION <span class="keyword">include</span>)</span><br></pre></td></tr></table></figure>
+
+<p>生成的 Demo 文件和 MathFunctions 函数库 libMathFunctions.o 文件将会被复制到 <code>/usr/local/bin</code> 中，而 MathFunctions.h 和生成的 config.h 文件则会被复制到 <code>/usr/local/include</code> 中</p>
+<p>自定义安装路径</p>
+<figure class="highlight cmake"><table><tr><td class="code"><pre><span class="line"><span class="comment">#需要出现在 project(ProjectName ) 之前</span></span><br><span class="line"><span class="keyword">set</span>(CMAKE_INSTALL_PREFIX <span class="string">&quot;/Users/richard/Desktop/unix&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake .</span><br><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+
+<h1 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h1><figure class="highlight cmake"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 启用测试</span></span><br><span class="line"><span class="keyword">enable_testing</span>()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 测试程序是否成功运行</span></span><br><span class="line"><span class="keyword">add_test</span> (test_run Demo <span class="number">5</span> <span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#其中 PASS_REGULAR_EXPRESSION 用来测试输出是否包含后面跟着的字符串。</span></span><br><span class="line"><span class="comment"># 测试帮助信息是否可以正常提示</span></span><br><span class="line"><span class="keyword">add_test</span> (test_usage Demo)</span><br><span class="line"><span class="keyword">set_tests_properties</span> (test_usage</span><br><span class="line">  PROPERTIES PASS_REGULAR_EXPRESSION <span class="string">&quot;Usage: .* base exponent&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 测试 5 的平方</span></span><br><span class="line"><span class="keyword">add_test</span> (test_5_2 Demo <span class="number">5</span> <span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">set_tests_properties</span> (test_5_2</span><br><span class="line"> PROPERTIES PASS_REGULAR_EXPRESSION <span class="string">&quot;is 25&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 测试 10 的 5 次方</span></span><br><span class="line"><span class="keyword">add_test</span> (test_10_5 Demo <span class="number">10</span> <span class="number">5</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">set_tests_properties</span> (test_10_5</span><br><span class="line"> PROPERTIES PASS_REGULAR_EXPRESSION <span class="string">&quot;is 100000&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 测试 2 的 10 次方</span></span><br><span class="line"><span class="keyword">add_test</span> (test_2_10 Demo <span class="number">2</span> <span class="number">10</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">set_tests_properties</span> (test_2_10</span><br><span class="line"> PROPERTIES PASS_REGULAR_EXPRESSION <span class="string">&quot;is 1024&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="使用宏来编写测试用例"><a href="#使用宏来编写测试用例" class="headerlink" title="使用宏来编写测试用例"></a>使用宏来编写测试用例</h2><figure class="highlight cmake"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 定义一个宏，用来简化测试工作</span></span><br><span class="line"><span class="keyword">macro</span> (do_test arg1 arg2 result)</span><br><span class="line"></span><br><span class="line">  <span class="keyword">add_test</span> (test_<span class="variable">$&#123;arg1&#125;</span>_<span class="variable">$&#123;arg2&#125;</span> Demo <span class="variable">$&#123;arg1&#125;</span> <span class="variable">$&#123;arg2&#125;</span>)</span><br><span class="line">  <span class="keyword">set_tests_properties</span> (test_<span class="variable">$&#123;arg1&#125;</span>_<span class="variable">$&#123;arg2&#125;</span></span><br><span class="line">    PROPERTIES PASS_REGULAR_EXPRESSION <span class="variable">$&#123;result&#125;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">endmacro</span> (do_test)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用该宏进行一系列的数据测试</span></span><br><span class="line">do_test (<span class="number">5</span> <span class="number">2</span> <span class="string">&quot;is 25&quot;</span>)</span><br><span class="line">do_test (<span class="number">10</span> <span class="number">5</span> <span class="string">&quot;is 100000&quot;</span>)</span><br><span class="line">do_test (<span class="number">2</span> <span class="number">10</span> <span class="string">&quot;is 1024&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<h1 id="支持-GDB"><a href="#支持-GDB" class="headerlink" title="支持 GDB"></a>支持 GDB</h1><p>让 CMake 支持 gdb 的设置也很容易，只需要指定 <code>Debug</code> 模式下开启 <code>-g</code> 选项：</p>
+<figure class="highlight cmake"><table><tr><td class="code"><pre><span class="line"><span class="keyword">set</span>(CMAKE_BUILD_TYPE <span class="string">&quot;Debug&quot;</span>)</span><br><span class="line"><span class="keyword">set</span>(CMAKE_CXX_FLAGS_DEBUG <span class="string">&quot;$ENV&#123;CXXFLAGS&#125; -O0 -Wall -g -ggdb&quot;</span>)</span><br><span class="line"><span class="keyword">set</span>(CMAKE_CXX_FLAGS_RELEASE <span class="string">&quot;$ENV&#123;CXXFLAGS&#125; -O3 -Wall&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>之后可以直接对生成的程序使用 gdb 来调试。</p>
+<h1 id="添加环境检查"><a href="#添加环境检查" class="headerlink" title="添加环境检查"></a>添加环境检查</h1><p><strong>添加 CheckFunctionExists 宏</strong><br>首先在顶层 CMakeLists 文件中添加 CheckFunctionExists.cmake 宏，并调用 check_function_exists 命令测试链接器是否能够在链接阶段找到 pow 函数。</p>
+<figure class="highlight cmake"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 检查系统是否支持 pow 函数</span></span><br><span class="line"><span class="keyword">include</span> (<span class="variable">$&#123;CMAKE_ROOT&#125;</span>/Modules/CheckFunctionExists.cmake)</span><br><span class="line">check_function_exists (pow HAVE_POW)</span><br><span class="line">将上面这段代码放在 <span class="keyword">configure_file</span> 命令前</span><br></pre></td></tr></table></figure>
+
+<h3 id="预定义相关宏变量"><a href="#预定义相关宏变量" class="headerlink" title="预定义相关宏变量"></a>预定义相关宏变量</h3><p>接下来修改 <a href="http://config.h.in/">config.h.in</a> 文件，预定义相关的宏变量。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">// does the platform provide pow function?</span><br><span class="line">#cmakedefine HAVE_POW</span><br></pre></td></tr></table></figure>
+
+<h3 id="在代码中使用宏和函数"><a href="#在代码中使用宏和函数" class="headerlink" title="在代码中使用宏和函数"></a>在代码中使用宏和函数</h3><p>最后一步是修改 <a href="http://main.cc/">main.cc</a> ，在代码中使用宏和函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#ifdef HAVE_POW</span><br><span class="line">    printf(&quot;Now we use the standard library. \n&quot;);</span><br><span class="line">    double result = pow(base, exponent);</span><br><span class="line">#else</span><br><span class="line">    printf(&quot;Now we use our own Math library. \n&quot;);</span><br><span class="line">    double result = power(base, exponent);</span><br><span class="line">#endif</span><br></pre></td></tr></table></figure>
+
+<h1 id="添加版本号"><a href="#添加版本号" class="headerlink" title="添加版本号"></a>添加版本号</h1><p>首先修改顶层 CMakeLists 文件，在 <code>project</code> 命令之后加入如下两行：</p>
+<figure class="highlight cmake"><table><tr><td class="code"><pre><span class="line"><span class="keyword">set</span> (Demo_VERSION_MAJOR <span class="number">1</span>)</span><br><span class="line"><span class="keyword">set</span> (Demo_VERSION_MINOR <span class="number">0</span>)</span><br></pre></td></tr></table></figure>
+
+<p>分别指定当前的项目的主版本号和副版本号。</p>
+<p>为了在代码中获取版本信息，我们可以修改 <a href="http://config.h.in/">config.h.in</a> 文件，添加两个预定义变量：</p>
+<figure class="highlight cmake"><table><tr><td class="code"><pre><span class="line">// the configured options <span class="keyword">and</span> settings for Tutorial</span><br><span class="line"><span class="comment">#define Demo_VERSION_MAJOR @Demo_VERSION_MAJOR@</span></span><br><span class="line"><span class="comment">#define Demo_VERSION_MINOR @Demo_VERSION_MINOR@</span></span><br></pre></td></tr></table></figure>
+
+<p>可以直接在代码中打印版本信息了：</p>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="built_in">printf</span>(<span class="string">&quot;%s Version %d.%d\n&quot;</span>,</span><br><span class="line">            argv[<span class="number">0</span>],</span><br><span class="line">            Demo_VERSION_MAJOR,</span><br><span class="line">            Demo_VERSION_MINOR);</span><br></pre></td></tr></table></figure>
+
+<h1 id="生成安装包"><a href="#生成安装包" class="headerlink" title="生成安装包"></a>生成安装包</h1><p>配置生成各种平台上的安装包，包括二进制安装包和源码安装包</p>
+<p>需要用到 CPack ，它同样也是由 CMake 提供的一个工具，专门用于打包。</p>
+<p>首先在顶层的 CMakeLists.txt 文件尾部添加下面几行：</p>
+<figure class="highlight cmake"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 构建一个 CPack 安装包</span></span><br><span class="line"><span class="keyword">include</span> (InstallRequiredSystemLibraries)</span><br><span class="line"><span class="keyword">set</span> (CPACK_RESOURCE_FILE_LICENSE</span><br><span class="line">  <span class="string">&quot;$&#123;CMAKE_CURRENT_SOURCE_DIR&#125;/License.txt&quot;</span>)</span><br><span class="line"><span class="keyword">set</span> (CPACK_PACKAGE_VERSION_MAJOR <span class="string">&quot;$&#123;Demo_VERSION_MAJOR&#125;&quot;</span>)</span><br><span class="line"><span class="keyword">set</span> (CPACK_PACKAGE_VERSION_MINOR <span class="string">&quot;$&#123;Demo_VERSION_MINOR&#125;&quot;</span>)</span><br><span class="line"><span class="keyword">include</span> (CPack)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>生成二进制安装包：</li>
+</ul>
+<figure class="highlight cmake"><table><tr><td class="code"><pre><span class="line">cpack -C CPackConfig.cmake</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>生成源码安装包</li>
+</ul>
+<figure class="highlight cmake"><table><tr><td class="code"><pre><span class="line">cpack -C CPackSourceConfig.cmake</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>CPP</category>
+      </categories>
+      <tags>
+        <tag>CMake</tag>
+        <tag>Linux</tag>
+        <tag>C++</tag>
+        <tag>C</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JVM 类加载机制</title>
+    <url>/2022/05/31/JVM%20%E7%B1%BB%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6/</url>
+    <content><![CDATA[<h1 id="java-类加载机制"><a href="#java-类加载机制" class="headerlink" title="java 类加载机制"></a>java 类加载机制</h1><p>[TOC]</p>
+<h2 id="类的生命周期"><a href="#类的生命周期" class="headerlink" title="类的生命周期"></a>类的生命周期</h2><p>类加载过程包括了 加载,验证,准备,解析,初始化五个阶段</p>
+<p>其中 加载,验证,准备和初始化顺序是确定的,解析不一定 他可以在初始化阶段之后进行(为了支持 java 的动态绑定)</p>
+<p>这些阶段是按顺序开始,并且互相交叉混合进行的,在一个阶段执行过程中调用或激活另一个阶段</p>
+<p><img src="/Users/richard/Downloads/java_jvm_classload_2.png" alt="java_jvm_classload_2"></p>
+<h2 id="类加载"><a href="#类加载" class="headerlink" title="类加载"></a>类加载</h2><p>加载阶段 jvm 的操作:</p>
+<ul>
+<li>通过一个类的全想,定名来获取其定义的二进制字节流</li>
+<li>将这个字节流所代表的静态存储结构转化为方法取得运行时数据结构</li>
+<li>在 java 堆中生成一个代表这个类的 java.lang.Class 对象作为对方法区中这写数据的访问入口</li>
+</ul>
+<p><img src="/Users/richard/Downloads/java_jvm_classload_1.png" alt="java_jvm_classload_1"></p>
+<p>加载阶段完成后虚拟机外部的二进制字节流就按照虚拟机所需格式存储在方法区中,而且在 java 堆中也创建一个 java.lang.Class 类的对象,这样便可以通过该对象访问方法区中的这些数据</p>
+<p>类加载器必须在首次主动使用该类时才报告错误,如果这个类一直没有被主动使用,那么类加载器就不会报告错误</p>
+<h2 id="连接"><a href="#连接" class="headerlink" title="连接"></a>连接</h2><h3 id="验证-确保被加载类的正确性"><a href="#验证-确保被加载类的正确性" class="headerlink" title="验证:确保被加载类的正确性"></a>验证:确保被加载类的正确性</h3><p>为了确保 Class 文件的字节流包含的信息符合当桥虚拟机的要求,并且不会危害虚拟机自身的安全.其中包括 4 个阶段的检验动作:</p>
+<ul>
+<li>文件格式验证 验证字节流是否符合 Class 文件格式规范,</li>
+<li>元数据验证: 对字节码描述的信息进行语义分析以保证其描述的信息符合 java 语言规范的要求,例如这个类是否有父类</li>
+<li>字节码验证: 通过数据流和控制流分析,确定程序语义是合法的,符合逻辑的</li>
+<li>符号引用验证:确保解析动作能正确执行</li>
+</ul>
+<p>验证阶段非常重要,但不是必须的.他对程序运行期没有影响.</p>
+<p>如果所引用的类经过反复验证,可以采用<code>-Xverifynone</code>关闭大部分的类验证措施,以缩短虚拟机类加载的时间</p>
+<h3 id="准备-为类的静态变量分配内存-并初始化为默认值"><a href="#准备-为类的静态变量分配内存-并初始化为默认值" class="headerlink" title="准备:为类的静态变量分配内存,并初始化为默认值"></a>准备:为类的静态变量分配内存,并初始化为默认值</h3><p>准备阶段是正是为变量分配内存并设置类变量初始值的阶段. 这些内存都将在方法区中分配</p>
+<ul>
+<li><p>此时分配的内存仅包括类变量(static) 而不包括实例变量 实例变量会跟随对象实例化时随着对象一起在 java 堆中分配</p>
+</li>
+<li><p>这里设置的初始值一般(特殊情况下为常量会被直接赋为指定值)是数据类型默认的零值(0 0L null false) 而不是在代码中显式赋予的值</p>
+</li>
+<li><p>对基本数据类型来说，对于类变量(static)和全局变量，如果不显式地对其赋值而直接使用，则系统会为其赋予默认的零值，而对于局部变量来说，在使用前必须显式地为其赋值，否则编译时不通过。</p>
+</li>
+<li><p>对于同时被<code>static</code>和<code>final</code>修饰的常量，必须在声明的时候就为其显式地赋值，否则编译时不通过；而只被 final 修饰的常量则既可以在声明时显式地为其赋值，也可以在类初始化时显式地为其赋值，总之，在使用前必须为其显式地赋值，系统不会为其赋予默认零值。</p>
+</li>
+<li><p>对于引用数据类型<code>reference</code>来说，如数组引用、对象引用等，如果没有对其进行显式地赋值而直接使用，系统都会为其赋予默认的零值，即<code>null</code></p>
+</li>
+<li><p>如果类字段的字段属性表中存在 ConstantValue 属性，即同时被 final 和 static 修饰，那么在准备阶段变量 value 就会被初始化为 ConstValue 属性所指定的值。假设上面的类变量 value 被定义为: <code>public static final int value = 3；</code>编译时 Javac 将会为 value 生成 ConstantValue 属性，在准备阶段虚拟机就会根据 ConstantValue 的设置将 value 赋值为 3。我们可以理解为<code>static final</code>常量在编译期就将其结果放入了调用它的类的常量池中</p>
+</li>
+</ul>
+<h3 id="解析-把类中的符号引用转换为直接引用"><a href="#解析-把类中的符号引用转换为直接引用" class="headerlink" title="解析:把类中的符号引用转换为直接引用"></a>解析:把类中的符号引用转换为直接引用</h3><p>虚拟机将常量池内的符号引用替换为直接引用的过程，解析动作主要针对<code>类</code>或<code>接口</code>、<code>字段</code>、<code>类方法</code>、<code>接口方法</code>、<code>方法类型</code>、<code>方法句柄</code>和<code>调用点</code>限定符 7 类符号引用进行。符号引用就是一组符号来描述目标，可以是任何字面量。</p>
+<p><code>直接引用</code>就是直接指向目标的指针、相对偏移量或一个间接定位到目标的句柄。</p>
+<h3 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h3><p>初始化，为类的静态变量赋予正确的初始值，JVM 负责对类进行初始化，主要对类变量进行初始化。在 Java 中对类变量进行初始值设定有两种方式:</p>
+<ul>
+<li>声明类变量是指定初始值</li>
+<li>使用静态代码块为类变量指定初始值</li>
+</ul>
+<p><strong>JVM 初始化步骤</strong></p>
+<ul>
+<li>假如这个类还没有被加载和连接，则程序先加载并连接该类</li>
+<li>假如该类的直接父类还没有被初始化，则先初始化其直接父类</li>
+<li>假如类中有初始化语句，则系统依次执行这些初始化语句</li>
+</ul>
+<p><strong>类初始化时机</strong>: 只有当对类的主动使用的时候才会导致类的初始化，类的主动使用包括以下六种:</p>
+<ul>
+<li>创建类的实例，也就是 new 的方式</li>
+<li>访问某个类或接口的静态变量，或者对该静态变量赋值</li>
+<li>调用类的静态方法</li>
+<li>反射(如 Class.forName(“com.pdai.jvm.Test”))</li>
+<li>初始化某个类的子类，则其父类也会被初始化</li>
+<li>Java 虚拟机启动时被标明为启动类的类(Java Test)，直接使用 java.exe 命令来运行某个主类</li>
+</ul>
+<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><p>类访问方法区内的数据结构的接口， 对象是 Heap 区的数据。</p>
+<h3 id="卸载"><a href="#卸载" class="headerlink" title="卸载"></a>卸载</h3><p><strong>Java 虚拟机将结束生命周期的几种情况</strong></p>
+<ul>
+<li>执行了 System.exit()方法</li>
+<li>程序正常执行结束</li>
+<li>程序在执行过程中遇到了异常或错误而异常终止</li>
+<li>由于操作系统出现错误而导致 Java 虚拟机进程终止</li>
+</ul>
+<h2 id="类加载器的层次"><a href="#类加载器的层次" class="headerlink" title="类加载器的层次"></a>类加载器的层次</h2><p><img src="/Users/richard/Downloads/java_jvm_classload_3.png" alt="java_jvm_classload_3"></p>
+<p>这里父类加载器并不是通过继承关系来实现的，而是采用组合实现的。</p>
+<p>对于 jvm,只存在两种不同的类加载器:</p>
+<ul>
+<li>启动类加载器 C++实现(Hotspot)</li>
+<li>所有的其他类加载器 这些类加载器都由 Java 语言实现，独立于虚拟机之外，并且全部继承自抽象类<code>java.lang.ClassLoader</code>，这些类加载器需要由启动类加载器加载到内存中之后才能去加载其他的类。</li>
+</ul>
+<p>对于开发者,类加载器分为三类:</p>
+<ul>
+<li>启动类加载器 Bootstrap ClassLoader 负责加载存放在 JDK\jre\lib(JDK 代表 JDK 的安装目录，下同)下，或被-Xbootclasspath 参数指定的路径中的，并且能被虚拟机识别的类库(如 rt.jar，所有的 java.*开头的类均被 Bootstrap ClassLoader 加载)。启动类加载器是无法被 Java 程序直接引用的</li>
+<li>扩展类加载器 Extension ClassLoader 该加载器由<code>sun.misc.Launcher$ExtClassLoader</code>实现，它负责加载 JDK\jre\lib\ext 目录中，或者由 java.ext.dirs 系统变量指定的路径中的所有类库(如 javax.*开头的类)，开发者可以直接使用扩展类加载器。</li>
+<li>应用程序类加载器 Application ClassLoader 该类加载由<code>sun.misc.Launcher$AppClassLoader</code>来实现，它负责加载用户类路径(ClassPath)所指定的类，开发者可以直接使用该类加载器，如果应用程序中没有自定义过自己的类加载器，一般情况下这个就是程序中默认的类加载器。</li>
+</ul>
+<p>如果编写了自己的 ClassLoader，便可以做到如下几点:</p>
+<ul>
+<li>在执行非置信代码之前，自动验证数字签名。</li>
+<li>动态地创建符合用户特定需要的定制化构建类。</li>
+<li>从特定的场所取得 java class，例如数据库中和网络中。</li>
+</ul>
+<h2 id="类加载方式"><a href="#类加载方式" class="headerlink" title="类加载方式"></a>类加载方式</h2><p>类加载有三种方式:</p>
+<ul>
+<li><p>命令行启动应用时由 JVM 初始化加载</p>
+</li>
+<li><p>通过 Class.forName()方法动态加载</p>
+</li>
+<li><p>通过 ClassLoader.loadClass()方法动态加载</p>
+</li>
+<li><p>Class.forName(): 将类的.class 文件加载到 jvm 中之外，还会对类进行解释，执行类中的 static 块；</p>
+</li>
+<li><p>ClassLoader.loadClass(): 只干一件事情，就是将.class 文件加载到 jvm 中，不会执行 static 中的内容,只有在 newInstance 才会去执行 static 块。</p>
+</li>
+<li><p>Class.forName(name, initialize, loader)带参函数也可控制是否加载 static 块。并且只有调用了 newInstance()方法采用调用构造函数，创建类的对象 。</p>
+</li>
+</ul>
+<h2 id="JVM-类加载机制"><a href="#JVM-类加载机制" class="headerlink" title="JVM 类加载机制"></a>JVM 类加载机制</h2><ul>
+<li><code>全盘负责</code> 加载某个 Class 时,该类加载器会加载该类所依赖和引用的其他 Class 除非正在使用另一个类加载器来载入</li>
+<li><code>父类委托</code> 先让父类加载器试图加载该类.只有在父类加载器无法加载该类时才尝试从自己的类路径中加载该类</li>
+<li><code>缓存机制</code> 保证所有加载过的类都会被缓存,当程序中需要使用某个 Class 时，类加载器先从缓存区寻找该 Class，只有缓存区不存在，系统才会读取该类对应的二进制数据，并将其转换成 Class 对象，存入缓存区。这就是为什么修改了 Class 后，必须重启 JVM，程序的修改才会生效</li>
+<li><code>双亲委派机制</code>, 如果一个类加载器收到了类加载的请求，它首先不会自己去尝试加载这个类，而是把请求委托给父加载器去完成，依次向上，因此，所有的类加载请求最终都应该被传递到顶层的启动类加载器中，只有当父加载器在它的搜索范围中没有找到所需的类时，即无法完成该加载，子加载器才会尝试自己去加载该类。</li>
+</ul>
+<ol>
+<li>当 AppClassLoader 加载一个 class 时，它首先不会自己去尝试加载这个类，而是把类加载请求委派给父类加载器 ExtClassLoader 去完成。</li>
+<li>当 ExtClassLoader 加载一个 class 时，它首先也不会自己去尝试加载这个类，而是把类加载请求委派给 BootStrapClassLoader 去完成。</li>
+<li>如果 BootStrapClassLoader 加载失败(例如在$JAVA_HOME&#x2F;jre&#x2F;lib 里未查找到该 class)，会使用 ExtClassLoader 来尝试加载；</li>
+<li>若 ExtClassLoader 也加载失败，则会使用 AppClassLoader 来加载，如果 AppClassLoader 也加载失败，则会报出异常 ClassNotFoundException。</li>
+</ol>
+<h3 id="双亲委派优势"><a href="#双亲委派优势" class="headerlink" title="双亲委派优势"></a><strong>双亲委派优势</strong></h3><ul>
+<li>系统类防止内存中出现多份同样的字节码</li>
+<li>保证 Java 程序安全稳定运行</li>
+</ul>
+]]></content>
+      <categories>
+        <category>JVM</category>
+      </categories>
+      <tags>
+        <tag>JVM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hexo使用入门</title>
+    <url>/2024/08/29/hexo%E4%BD%BF%E7%94%A8/</url>
+    <content><![CDATA[<hr>
+<h2 id="hexo-安装"><a href="#hexo-安装" class="headerlink" title="hexo 安装"></a>hexo 安装</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">brew install hexo</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">或</span></span><br><span class="line">npm install -g hexo-cli</span><br></pre></td></tr></table></figure>
+
+<p>安装 Hexo 完成后，请执行下列命令，Hexo 将会在指定文件夹中新建所需要的文件。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">hexo init &lt;folder&gt;</span><br><span class="line">cd &lt;folder&gt;</span><br><span class="line">npm install</span><br></pre></td></tr></table></figure>
+
+<p>初始化后，您的项目文件夹将如下所示：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">.</span><br><span class="line">├── _config.yml</span><br><span class="line">├── package.json</span><br><span class="line">├── scaffolds</span><br><span class="line">├── source</span><br><span class="line">|   ├── _drafts</span><br><span class="line">|   └── _posts</span><br><span class="line">└── themes</span><br></pre></td></tr></table></figure>
+
+<h2 id="指令"><a href="#指令" class="headerlink" title="指令"></a>指令</h2><h2 id="init"><a href="#init" class="headerlink" title="init"></a>init</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">hexo init [folder]</span><br></pre></td></tr></table></figure>
+
+<p>新建一个网站。 如果没有设置 <code>folder</code> ，Hexo 默认在目前的文件夹建立网站。</p>
+<h2 id="new"><a href="#new" class="headerlink" title="new"></a>new</h2><p>执行以下命令新建一个页面</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">hexo new [layout] &lt;title&gt;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>layout 可选,默认在<code>_config.yml</code> 的 <code>default_layout</code>设置</li>
+</ul>
+<p>hexo 具有三种默认布局:</p>
+<table>
+<thead>
+<tr>
+<th align="left">Layout</th>
+<th align="center">Path</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>post</code></td>
+<td align="center"><code>source/_posts</code></td>
+</tr>
+<tr>
+<td align="left"><code>page</code></td>
+<td align="center"><code>source</code></td>
+</tr>
+<tr>
+<td align="left"><code>draft</code></td>
+<td align="center"><code>source/_drafts</code></td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th align="left">选项</th>
+<th align="left">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>-p</code>, <code>--path</code></td>
+<td align="left">文章的路径。 自定义文章的路径。</td>
+</tr>
+<tr>
+<td align="left"><code>-r</code>, <code>--replace</code></td>
+<td align="left">如果存在的话，替换当前的文章。</td>
+</tr>
+<tr>
+<td align="left"><code>-s</code>, <code>--slug</code></td>
+<td align="left">文章别名。 自定义文章的 URL。</td>
+</tr>
+</tbody></table>
+<p>默认情况下，Hexo 会使用文章的标题来决定文章文件的路径。 对于独立页面来说，Hexo 会创建一个以标题为名字的目录，并在目录中放置一个 <code>index.md</code> 文件。 你可以使用 <code>--path</code> 参数来覆盖上述行为、自行决定文件的目录：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">hexo new page --path about/me &quot;About me&quot;</span><br></pre></td></tr></table></figure>
+
+<p>以上命令会创建一个 <code>source/about/me.md</code> 文件，同时 Front Matter 中的 title 为 <code>&quot;About me&quot;</code></p>
+<p>注意！ title 是必须指定的！</p>
+<h2 id="generate"><a href="#generate" class="headerlink" title="generate"></a>generate</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">hexo generate</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th align="left">选项</th>
+<th align="left">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>-d</code>, <code>--deploy</code></td>
+<td align="left">Deploy after generation finishes</td>
+</tr>
+<tr>
+<td align="left"><code>-w</code>, <code>--watch</code></td>
+<td align="left">监视文件变动</td>
+</tr>
+<tr>
+<td align="left"><code>-b</code>, <code>--bail</code></td>
+<td align="left">生成过程中如果发生任何未处理的异常则抛出异常</td>
+</tr>
+<tr>
+<td align="left"><code>-f</code>, <code>--force</code></td>
+<td align="left">强制重新生成</td>
+</tr>
+<tr>
+<td align="left"><code>-c</code>, <code>--concurrency</code></td>
+<td align="left">要同时生成的文件的最大数量。 默认无限制</td>
+</tr>
+</tbody></table>
+<h2 id="publish"><a href="#publish" class="headerlink" title="publish"></a>publish</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">hexo publish [layout] &lt;filename&gt;</span><br></pre></td></tr></table></figure>
+
+<p>发表草稿。</p>
+<h2 id="server"><a href="#server" class="headerlink" title="server"></a>server</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">hexo server</span><br></pre></td></tr></table></figure>
+
+<p>启动服务器。 默认情况下，访问网址为： <code>http://localhost:4000/</code>。</p>
+<table>
+<thead>
+<tr>
+<th align="left">选项</th>
+<th align="left">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>-p</code>, <code>--port</code></td>
+<td align="left">重设端口</td>
+</tr>
+<tr>
+<td align="left"><code>-s</code>, <code>--static</code></td>
+<td align="left">只使用静态文件</td>
+</tr>
+<tr>
+<td align="left"><code>-l</code>, <code>--log</code></td>
+<td align="left">Enable logger. Override logger format.</td>
+</tr>
+</tbody></table>
+<h2 id="deploy"><a href="#deploy" class="headerlink" title="deploy"></a>deploy</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>部署你的网站。</p>
+<table>
+<thead>
+<tr>
+<th align="left">选项</th>
+<th align="left">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>-g</code>, <code>--generate</code></td>
+<td align="left">Generate before deployment</td>
+</tr>
+</tbody></table>
+<h2 id="render"><a href="#render" class="headerlink" title="render"></a>render</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">hexo render &lt;file1&gt; [file2] ...</span><br></pre></td></tr></table></figure>
+
+<p>渲染文件。</p>
+<table>
+<thead>
+<tr>
+<th align="left">选项</th>
+<th align="left">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>-o</code>, <code>--output</code></td>
+<td align="left">Output destination</td>
+</tr>
+</tbody></table>
+<h2 id="自定义配置文件的路径"><a href="#自定义配置文件的路径" class="headerlink" title="自定义配置文件的路径"></a>自定义配置文件的路径</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">hexo --config custom.yml</span><br></pre></td></tr></table></figure>
+
+<p>自定义配置文件的路径，指定这个参数后将不再使用默认的 <code>_config.yml</code>。 还接受一个以逗号分隔的 JSON 或 YAML 配置文件列表（无空格），该列表将把这些文件合并为一个 <code>_multiconfig.yml</code> 文件。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">hexo --config custom.yml,custom2.json</span><br></pre></td></tr></table></figure>
+
+<h2 id="显示草稿"><a href="#显示草稿" class="headerlink" title="显示草稿"></a>显示草稿</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">hexo --draft</span><br></pre></td></tr></table></figure>
+
+<p>显示 <code>source/_drafts</code> 文件夹中的草稿文章。</p>
+<h2 id="文件名"><a href="#文件名" class="headerlink" title="文件名"></a>文件名</h2><p>默认的, hexo 使用标题作为文件名</p>
+<p>可以在<code>_config.yml</code>的 new_post_name&#96; 中设置</p>
+<p>可以通过占位符自定义文件名,例如 <code>:year-:month-:day-:title.md</code></p>
+<table>
+<thead>
+<tr>
+<th align="left">Placeholder</th>
+<th align="left">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>:title</code></td>
+<td align="left">标题（小写，空格将会被替换为短杠）</td>
+</tr>
+<tr>
+<td align="left"><code>:year</code></td>
+<td align="left">建立的年份，比如， <code>2015</code></td>
+</tr>
+<tr>
+<td align="left"><code>:month</code></td>
+<td align="left">建立的月份（有前导零），比如， <code>04</code></td>
+</tr>
+<tr>
+<td align="left"><code>:i_month</code></td>
+<td align="left">建立的月份（无前导零），比如， <code>4</code></td>
+</tr>
+<tr>
+<td align="left"><code>:day</code></td>
+<td align="left">建立的日期（有前导零），比如， <code>07</code></td>
+</tr>
+<tr>
+<td align="left"><code>:i_day</code></td>
+<td align="left">建立的日期（无前导零），比如， <code>7</code></td>
+</tr>
+</tbody></table>
+<h2 id="草稿"><a href="#草稿" class="headerlink" title="草稿"></a>草稿</h2><p>使用<code>draft</code>布局的文件将被保存在<code>source/_drafts</code></p>
+<p>可以使用<code>publish</code> 将 draft 文件移动到<code>source/_posts</code></p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">hexo publish [layout] &lt;title&gt;</span><br></pre></td></tr></table></figure>
+
+<p>默认情况下不显示草稿。您可以在运行 Hexo 时添加 <code>--draft</code> 选项或启用 <code>_config.yml</code> 中的 render_drafts 设置来渲染草稿。</p>
+<h2 id="脚手架"><a href="#脚手架" class="headerlink" title="脚手架"></a>脚手架</h2><p>在新建文章时，Hexo 会根据 <code>scaffolds</code> 文件夹内相对应的文件来建立文件。 例如：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">hexo new photo &quot;My Gallery&quot;</span><br></pre></td></tr></table></figure>
+
+<p>在执行这行指令时，Hexo 会尝试在 <code>scaffolds</code> 文件夹中寻找 <code>photo.md</code>，并根据其内容建立文章。 以下是您可以在模版中使用的变量：</p>
+<table>
+<thead>
+<tr>
+<th align="left">Placeholder</th>
+<th align="left">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>layout</code></td>
+<td align="left">布局</td>
+</tr>
+<tr>
+<td align="left"><code>title</code></td>
+<td align="left">标题</td>
+</tr>
+<tr>
+<td align="left"><code>date</code></td>
+<td align="left">文件建立日期</td>
+</tr>
+</tbody></table>
+<h2 id="支持的格式"><a href="#支持的格式" class="headerlink" title="支持的格式"></a>支持的格式</h2><p>Hexo 支持以任何格式书写文章，只要安装了相应的渲染插件。</p>
+<p>例如，Hexo 默认安装了 <code>hexo-renderer-marked</code> 和 <code>hexo-renderer-ejs</code>，因此你不仅可以用 Markdown 写作，你还可以用 EJS 写作。 如果你安装了 <code>hexo-renderer-pug</code>，你甚至可以用 Pug 模板语言书写文章。</p>
+<p>只需要将文章的扩展名从 <code>md</code> 改成 <code>ejs</code>，Hexo 就会使用 <code>hexo-renderer-ejs</code> 渲染这个文件，其他格式同理。</p>
+<h2 id="hexo-常用指令"><a href="#hexo-常用指令" class="headerlink" title="hexo 常用指令"></a>hexo 常用指令</h2><p>在本地运行博客用于测试</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">hexo c &amp;&amp; hexo g &amp;&amp; hexo s</span><br></pre></td></tr></table></figure>
+
+<h2 id="将-hexo-部署到-github"><a href="#将-hexo-部署到-github" class="headerlink" title="将 hexo 部署到 github"></a>将 hexo 部署到 github</h2><p>创建 ${username}.github.io 项目,将博客文件移动到文件夹中</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">mkdir richardthunder.github.io</span><br><span class="line">mv hexoBlog richardthunder.github.io</span><br><span class="line">cd richardthunder.github.io</span><br></pre></td></tr></table></figure>
+
+<p>安装 git 依赖</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">npm install hexo-deployer-git --save</span><br></pre></td></tr></table></figure>
+
+<p>修改 _config.yml 中的 Deployment</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">deploy:</span><br><span class="line">  type: git</span><br><span class="line">  repo: https://github.com/richardthunder/richardthunder.github.io.git</span><br><span class="line">  branch: main</span><br></pre></td></tr></table></figure>
+
+<p>清除之前的静态文件, 建立静态文件,部署至 github</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">hexo cl &amp;&amp; hexo g  &amp;&amp; hexo d</span><br></pre></td></tr></table></figure>
+
+<h2 id="安装-next-主题"><a href="#安装-next-主题" class="headerlink" title="安装 next 主题"></a>安装 next 主题</h2><p>官网 <a href="https://theme-next.js.org/">Next</a></p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git clone https://github.com/next-theme/hexo-theme-next themes/next</span><br></pre></td></tr></table></figure>
+
+<h3 id="新建-config-next-yml"><a href="#新建-config-next-yml" class="headerlink" title="新建 _config.next.yml"></a>新建 _config.next.yml</h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">touch _config.next.yml</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">or</span></span><br><span class="line">cp themes/next/_config.yml _config.next.yml</span><br></pre></td></tr></table></figure>
+
+<h3 id="更改-config-yml"><a href="#更改-config-yml" class="headerlink" title="更改_config.yml"></a>更改_config.yml</h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">theme: next</span><br></pre></td></tr></table></figure>
+
+<h3 id="设置主题"><a href="#设置主题" class="headerlink" title="设置主题"></a>设置主题</h3><p><a href="https://theme-next.js.org/docs/theme-settings/">配置主题</a></p>
+<h2 id="本地搜索功能"><a href="#本地搜索功能" class="headerlink" title="本地搜索功能"></a>本地搜索功能</h2><p>安装</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">npm install hexo-generator-searchdb</span><br></pre></td></tr></table></figure>
+
+<p>_config.yml</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">search:</span><br><span class="line">  path: search.xml</span><br><span class="line">  field: post</span><br><span class="line">  content: true</span><br><span class="line">  format: html</span><br></pre></td></tr></table></figure>
+
+<p>_config.next.yml</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">Local search</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">Dependencies: https://github.com/next-theme/hexo-generator-searchdb</span></span><br><span class="line">local_search:</span><br><span class="line">  enable: true</span><br><span class="line"><span class="meta prompt_">  # </span><span class="language-bash">Show top n results per article, show all results by setting to -1</span></span><br><span class="line">  top_n_per_article: 1</span><br><span class="line"><span class="meta prompt_">  # </span><span class="language-bash">Unescape html strings to the readable one.</span></span><br><span class="line">  unescape: false</span><br><span class="line"><span class="meta prompt_">  # </span><span class="language-bash">Preload the search data when the page loads.</span></span><br><span class="line">  preload: false</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">  #</span><span class="language-bash">修改</span></span><br><span class="line">codeblock:</span><br><span class="line">  copy_button:</span><br><span class="line">    enable: true</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Hexo</category>
+      </categories>
+      <tags>
+        <tag>hexo</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>java基础基本数据类型</title>
+    <url>/2022/05/31/java%E5%9F%BA%E7%A1%80%E5%9F%BA%E6%9C%AC%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/</url>
+    <content><![CDATA[<h2 id="基本数据类型"><a href="#基本数据类型" class="headerlink" title="基本数据类型"></a>基本数据类型</h2><ul>
+<li><p>boolean 1</p>
+</li>
+<li><p>char 16</p>
+</li>
+<li><p>byte 8</p>
+</li>
+<li><p>short 16</p>
+</li>
+<li><p>int 32</p>
+</li>
+<li><p>float 32</p>
+</li>
+<li><p>long 32</p>
+</li>
+</ul>
+<h3 id="缓存池"><a href="#缓存池" class="headerlink" title="缓存池"></a>缓存池</h3><p>Integer 是 int 的包装类。拥有-128-127 的缓存池。除非 <code>new Integer（number）</code> 否则会使用缓存池里的对象。</p>
+<h3 id="缓存池大小"><a href="#缓存池大小" class="headerlink" title="缓存池大小"></a>缓存池大小</h3><p>boolean true &amp;false</p>
+<p>all byte</p>
+<p>short value -128 - 127</p>
+<p>int -128 - 127</p>
+<p>char \u0000 - \uoo7F</p>
+<h2 id="String"><a href="#String" class="headerlink" title="String"></a>String</h2><p>String 被声明为 final 不可变</p>
+<p>好处：</p>
+<ul>
+<li>缓存 hash 值，只需要计算一次</li>
+<li>String Pool 需要</li>
+<li>安全性</li>
+<li>线程安全</li>
+</ul>
+<h3 id="String-StringBuffer-and-StringBuilder"><a href="#String-StringBuffer-and-StringBuilder" class="headerlink" title="String, StringBuffer and StringBuilder"></a>String, StringBuffer and StringBuilder</h3><p><strong>1. 可变性</strong></p>
+<ul>
+<li>String 不可变</li>
+<li>StringBuffer 和 StringBuilder 可变</li>
+</ul>
+<p><strong>2. 线程安全</strong></p>
+<ul>
+<li>String 不可变，因此是线程安全的</li>
+<li>StringBuilder 不是线程安全的</li>
+<li>StringBuffer 是线程安全的，内部使用 synchronized 进行同步</li>
+</ul>
+<h3 id="String-intern"><a href="#String-intern" class="headerlink" title="String.intern()"></a>String.intern()</h3><p>保证引用的是同一常量池中的对象</p>
+<p><code>s3=s1.intern()</code> 首先把 s1 的对象放入 String Pool （字符串常量池）中，再返回引用</p>
+<h2 id="java-参数传递"><a href="#java-参数传递" class="headerlink" title="java 参数传递"></a>java 参数传递</h2><p>java 是值传递而不是引用传递</p>
+<p>java 在传递基本数据的参数时会对实参创建一个副本。将副本传递给形参。因此对副本的改变不会影响到原实参。</p>
+<p>在传递引用类型是会传递实参的一个副本给形参。（两个引用指向的都是同一对象）。此时改变对象的内容会体现在原引用上。而对形参更改引用只会让形参指向新的对象，而不会更改原实参指向的对象。</p>
+<h3 id="类型转换"><a href="#类型转换" class="headerlink" title="类型转换"></a>类型转换</h3><p>java 不允许隐式向下转型，比如：</p>
+<p><del>float f&#x3D;1.1</del> 这样是将 double 类型转换为 float</p>
+<p>​ 必须使用 <code>float f=1.1f</code></p>
+<h3 id="隐式类型转换"><a href="#隐式类型转换" class="headerlink" title="隐式类型转换"></a>隐式类型转换</h3><p>使用+&#x3D;运算符可以执行隐式类型转换。使用如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="type">short</span> s1=<span class="number">1</span>；</span><br><span class="line">s1+=<span class="number">1</span>；</span><br><span class="line"><span class="comment">//相当于</span></span><br><span class="line">s1=(<span class="type">short</span>) (s1+<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+
+<p>因为 1 是 int 类型，直接<del>s1&#x3D;s1+1</del> 不允许隐式向下转型。</p>
+<h2 id="继承"><a href="#继承" class="headerlink" title="继承"></a>继承</h2><h3 id="访问权限"><a href="#访问权限" class="headerlink" title="访问权限"></a>访问权限</h3><ul>
+<li>private 只能被该类的对象和方法访问，子类不允许访问</li>
+<li>protected 属性和方法只能被类本身的方法和子类访问，子类在不同的包也可以访问</li>
+<li>public 允许跨类访问和跨包访问</li>
+<li>default 不带修饰符的 包访问权限（默认访问权限）</li>
+</ul>
+<h3 id="抽象类和接口"><a href="#抽象类和接口" class="headerlink" title="抽象类和接口"></a>抽象类和接口</h3><p>抽象类中不一定有抽像方法，抽象方法一定在抽象类中</p>
+<p>抽象类不能直接被实现，需要子类继承抽象类才能实例化子类</p>
+<h4 id="接口"><a href="#接口" class="headerlink" title="接口"></a>接口</h4><p>接口的成员（方法和字段）都必须是 public，<del>private 和 protected</del>不允许</p>
+<p>接口的字段只能是 static 和 final</p>
+<h4 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h4><p>一个类可以实现多个接口，但是只能继承一个父类</p>
+<p>接口的成员必须是 public 而抽象类则灵活</p>
+<p>接口的字段都必须是 static 和 final 接口更灵活</p>
+<p>一般接口优先于抽象类。</p>
+<p>使用接口:</p>
+<ul>
+<li>需要让不相关的类都实现一个方法，例如不相关的类都可以实现 Compareable 接口中的 compareTo() 方法；</li>
+<li>需要使用多重继承。</li>
+</ul>
+<p>使用抽象类:</p>
+<ul>
+<li>需要在几个相关的类中共享代码。</li>
+<li>需要能控制继承来的成员的访问权限，而不是都为 public。</li>
+<li>需要继承非静态和非常量字段。</li>
+</ul>
+<h3 id="super-关键字"><a href="#super-关键字" class="headerlink" title="super 关键字"></a>super 关键字</h3><p>使用<code>super()</code>可以访问父类的构造函数</p>
+<p>使用如果子类重写了父类的方法，可以使用 super 引用父类中的实现</p>
+<h3 id="重写和重载"><a href="#重写和重载" class="headerlink" title="重写和重载"></a>重写和重载</h3><h4 id="重写-override"><a href="#重写-override" class="headerlink" title="重写(override)"></a>重写(override)</h4><p>子类的方法声明与父类完全相同</p>
+<p><strong>里氏替换原则</strong>: 子类重写的方法的访问权限必须大于等于父类的方法; 子类方法返回类型必须是父类返回的类型或是子类型</p>
+<h4 id="重载-overload"><a href="#重载-overload" class="headerlink" title="重载(overload)"></a>重载(overload)</h4><p>在同一类中,方法的名称相同,但是 参数类型和个数,和顺序至少有一个不同</p>
+<p>仅返回值不同<del>不算重载</del></p>
+<h2 id="Object"><a href="#Object" class="headerlink" title="Object"></a>Object</h2><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">native</span> Class&lt;?&gt; getClass()</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">native</span> <span class="type">int</span> <span class="title function_">hashCode</span><span class="params">()</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">equals</span><span class="params">(Object obj)</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">native</span> Object <span class="title function_">clone</span><span class="params">()</span> <span class="keyword">throws</span> CloneNotSupportedException</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> String <span class="title function_">toString</span><span class="params">()</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">native</span> <span class="keyword">void</span> <span class="title function_">notify</span><span class="params">()</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">native</span> <span class="keyword">void</span> <span class="title function_">notifyAll</span><span class="params">()</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">native</span> <span class="keyword">void</span> <span class="title function_">wait</span><span class="params">(<span class="type">long</span> timeout)</span> <span class="keyword">throws</span> InterruptedException</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title function_">wait</span><span class="params">(<span class="type">long</span> timeout, <span class="type">int</span> nanos)</span> <span class="keyword">throws</span> InterruptedException</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title function_">wait</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException</span><br><span class="line"></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">finalize</span><span class="params">()</span> <span class="keyword">throws</span> Throwable &#123;&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h4 id="equals-实现"><a href="#equals-实现" class="headerlink" title="equals()实现"></a>equals()实现</h4><ul>
+<li>检查是否为同一个对象的引用,如果是直接返回 true</li>
+<li>检查是否为同一个类型 如果不是直接返回 false</li>
+<li>将 object 对象转型</li>
+<li>检查每个关键域是否相等</li>
+</ul>
+<h4 id="hashcode-实现"><a href="#hashcode-实现" class="headerlink" title="hashcode()实现"></a>hashcode()实现</h4><p>使用素数 31 对类中的每个成员变量(x,y,z)作如下操作</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">int</span> <span class="title function_">hashCode</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">int</span> <span class="variable">result</span> <span class="operator">=</span> <span class="number">17</span>;</span><br><span class="line">    result = <span class="number">31</span> * result + x;</span><br><span class="line">    result = <span class="number">31</span> * result + y;</span><br><span class="line">    result = <span class="number">31</span> * result + z;</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="toString-NaN"><a href="#toString-NaN" class="headerlink" title="toString()"></a>toString()</h4><p>默认返回 Classname@hashcode 如<code>ToStringExample@4554617c</code></p>
+<p>@后面为散列码的无符号十六进制表示</p>
+<h4 id="clone"><a href="#clone" class="headerlink" title="clone()"></a>clone()</h4><p><code>clone()</code>是 Object 的 protected 方法. 因此一个类不显式的实现 clone(),其他类就不能调用这个类的 clone()</p>
+<p>重写 clone()的时候必须实现<code>cloneable</code>接口 否则会抛出<code>CloneNotSupportException</code></p>
+<h5 id="浅拷贝与深拷贝"><a href="#浅拷贝与深拷贝" class="headerlink" title="浅拷贝与深拷贝"></a>浅拷贝与深拷贝</h5><p>浅拷贝拷贝出的引用与原引用指向同一个对象.(更改新引用指向的对象会同时改变原引用指向的对象)</p>
+<p>深拷贝拷贝的引用指向的对象与原引用指向的对象不同</p>
+<p>最好不要使用 clone(),可以使用拷贝构造函数和拷贝工厂来拷贝一个对象</p>
+<h2 id="final-与-static"><a href="#final-与-static" class="headerlink" title="final 与 static"></a>final 与 static</h2><h3 id="final"><a href="#final" class="headerlink" title="final"></a>final</h3><p>对数据可以声明为常量,不可更改,可以使编译是常量,也可以是运行时常量</p>
+<p>对于基本类型,final 使其不能改变.对于引用类型,final 使其不能改变引用,但是引用本身的对象可以修改</p>
+<p>对于方法可以使其不能被子类重写</p>
+<p>对于类,该类不能被继承</p>
+<h3 id="static"><a href="#static" class="headerlink" title="static"></a>static</h3><ul>
+<li><h4 id="静态变量-属于类的变量-由所有示例共享"><a href="#静态变量-属于类的变量-由所有示例共享" class="headerlink" title="静态变量 属于类的变量,由所有示例共享"></a>静态变量 属于类的变量,由所有示例共享</h4></li>
+<li><p>静态方法 在类加载的时刻就已经存在.不依赖于任何示例,所以必须有实现,不能是抽象方法</p>
+</li>
+</ul>
+<p>静态内部类不依赖于任何示例就可以实现.普通内部类必须有外部类的实例</p>
+<h4 id="初始化顺序"><a href="#初始化顺序" class="headerlink" title="初始化顺序"></a>初始化顺序</h4><p>静态语句块和变量的初始化顺序取决于在代码中的位置</p>
+<p>存在继承的情况下，初始化顺序为:</p>
+<ul>
+<li>父类(静态变量、静态语句块)</li>
+<li>子类(静态变量、静态语句块)</li>
+<li>父类(实例变量、普通语句块)</li>
+<li>父类(构造函数)</li>
+<li>子类(实例变量、普通语句块)</li>
+<li>子类(构造函数)</li>
+</ul>
+]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>Java数据类型</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Tmux 使用教程</title>
+    <url>/2024/04/07/Tmux%20%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B/</url>
+    <content><![CDATA[<p><a href="https://www.ruanyifeng.com/blog/developer/">https://www.ruanyifeng.com/blog/developer/</a>)</p>
+<h1 id="Tmux-使用教程"><a href="#Tmux-使用教程" class="headerlink" title="Tmux 使用教程"></a>Tmux 使用教程</h1><p>作者： <a href="https://www.ruanyifeng.com/">阮一峰</a></p>
+<p>日期： <a href="https://www.ruanyifeng.com/blog/2019/10/">2019 年 10 月 21 日</a></p>
+<p>Tmux 是一个终端复用器（terminal multiplexer），非常有用，属于常用的开发工具。</p>
+<p>本文介绍如何使用 Tmux。</p>
+<p><img src="https://www.wangbase.com/blogimg/asset/201910/bg2019102005.png" alt="img"></p>
+<h2 id="一、Tmux-是什么？"><a href="#一、Tmux-是什么？" class="headerlink" title="一、Tmux 是什么？"></a>一、Tmux 是什么？</h2><h3 id="1-1-会话与进程"><a href="#1-1-会话与进程" class="headerlink" title="1.1 会话与进程"></a>1.1 会话与进程</h3><p>命令行的典型使用方式是，打开一个终端窗口（terminal window，以下简称”窗口”），在里面输入命令。<strong>用户与计算机的这种临时的交互，称为一次”会话”（session）</strong> 。</p>
+<p>会话的一个重要特点是，窗口与其中启动的进程是<a href="https://www.ruanyifeng.com/blog/2016/02/linux-daemon.html">连在一起</a>的。打开窗口，会话开始；关闭窗口，会话结束，会话内部的进程也会随之终止，不管有没有运行完。</p>
+<p>一个典型的例子就是，<a href="https://www.ruanyifeng.com/blog/2011/12/ssh_remote_login.html">SSH 登录</a>远程计算机，打开一个远程窗口执行命令。这时，网络突然断线，再次登录的时候，是找不回上一次执行的命令的。因为上一次 SSH 会话已经终止了，里面的进程也随之消失了。</p>
+<p>为了解决这个问题，会话与窗口可以”解绑”：窗口关闭时，会话并不终止，而是继续运行，等到以后需要的时候，再让会话”绑定”其他窗口。</p>
+<h3 id="1-2-Tmux-的作用"><a href="#1-2-Tmux-的作用" class="headerlink" title="1.2 Tmux 的作用"></a>1.2 Tmux 的作用</h3><p><strong>Tmux 就是会话与窗口的”解绑”工具，将它们彻底分离。</strong></p>
+<blockquote>
+<p>（1）它允许在单个窗口中，同时访问多个会话。这对于同时运行多个命令行程序很有用。</p>
+<p>（2） 它可以让新窗口”接入”已经存在的会话。</p>
+<p>（3）它允许每个会话有多个连接窗口，因此可以多人实时共享会话。</p>
+<p>（4）它还支持窗口任意的垂直和水平拆分。</p>
+</blockquote>
+<p>类似的终端复用器还有 GNU Screen。Tmux 与它功能相似，但是更易用，也更强大。</p>
+<h2 id="二、基本用法"><a href="#二、基本用法" class="headerlink" title="二、基本用法"></a>二、基本用法</h2><h3 id="2-1-安装"><a href="#2-1-安装" class="headerlink" title="2.1 安装"></a>2.1 安装</h3><p>Tmux 一般需要自己安装。</p>
+<blockquote>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Ubuntu 或 Debian</span></span><br><span class="line">$ <span class="built_in">sudo</span> apt-get install tmux</span><br><span class="line"></span><br><span class="line"><span class="comment"># CentOS 或 Fedora</span></span><br><span class="line">$ <span class="built_in">sudo</span> yum install tmux</span><br><span class="line"></span><br><span class="line"><span class="comment"># Mac</span></span><br><span class="line">$ brew install tmux</span><br></pre></td></tr></table></figure>
+</blockquote>
+<h3 id="2-2-启动与退出"><a href="#2-2-启动与退出" class="headerlink" title="2.2 启动与退出"></a>2.2 启动与退出</h3><p>安装完成后，键入<code>tmux</code>命令，就进入了 Tmux 窗口。</p>
+<blockquote>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ tmux</span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>上面命令会启动 Tmux 窗口，底部有一个状态栏。状态栏的左侧是窗口信息（编号和名称），右侧是系统信息。</p>
+<p><img src="https://www.wangbase.com/blogimg/asset/201910/bg2019102006.png" alt="img"></p>
+<p>按下<code>Ctrl+d</code>或者显式输入<code>exit</code>命令，就可以退出 Tmux 窗口。</p>
+<blockquote>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">exit</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<h3 id="2-3-前缀键"><a href="#2-3-前缀键" class="headerlink" title="2.3 前缀键"></a>2.3 前缀键</h3><p>Tmux 窗口有大量的快捷键。所有快捷键都要通过前缀键唤起。默认的前缀键是<code>Ctrl+b</code>，即先按下<code>Ctrl+b</code>，快捷键才会生效。</p>
+<p>举例来说，帮助命令的快捷键是<code>Ctrl+b ?</code>。它的用法是，在 Tmux 窗口中，先按下<code>Ctrl+b</code>，再按下<code>?</code>，就会显示帮助信息。</p>
+<p>然后，按下 ESC 键或<code>q</code>键，就可以退出帮助。</p>
+<h2 id="三、会话管理"><a href="#三、会话管理" class="headerlink" title="三、会话管理"></a>三、会话管理</h2><h3 id="3-1-新建会话"><a href="#3-1-新建会话" class="headerlink" title="3.1 新建会话"></a>3.1 新建会话</h3><p>第一个启动的 Tmux 窗口，编号是<code>0</code>，第二个窗口的编号是<code>1</code>，以此类推。这些窗口对应的会话，就是 0 号会话、1 号会话。</p>
+<p>使用编号区分会话，不太直观，更好的方法是为会话起名。</p>
+<blockquote>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ tmux new -s &lt;session-name&gt;</span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>上面命令新建一个指定名称的会话。</p>
+<h3 id="3-2-分离会话"><a href="#3-2-分离会话" class="headerlink" title="3.2 分离会话"></a>3.2 分离会话</h3><p>在 Tmux 窗口中，按下<code>Ctrl+b d</code>或者输入<code>tmux detach</code>命令，就会将当前会话与窗口分离。</p>
+<blockquote>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ tmux detach</span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>上面命令执行后，就会退出当前 Tmux 窗口，但是会话和里面的进程仍然在后台运行。</p>
+<p><code>tmux ls</code>命令可以查看当前所有的 Tmux 会话。</p>
+<blockquote>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ tmux <span class="built_in">ls</span></span><br><span class="line"><span class="comment"># or</span></span><br><span class="line">$ tmux list-session</span><br></pre></td></tr></table></figure>
+</blockquote>
+<h3 id="3-3-接入会话"><a href="#3-3-接入会话" class="headerlink" title="3.3 接入会话"></a>3.3 接入会话</h3><p><code>tmux attach</code>命令用于重新接入某个已存在的会话。</p>
+<blockquote>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 使用会话编号</span></span><br><span class="line">$ tmux attach -t 0</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用会话名称</span></span><br><span class="line">$ tmux attach -t &lt;session-name&gt;</span><br></pre></td></tr></table></figure>
+</blockquote>
+<h3 id="3-4-杀死会话"><a href="#3-4-杀死会话" class="headerlink" title="3.4 杀死会话"></a>3.4 杀死会话</h3><p><code>tmux kill-session</code>命令用于杀死某个会话。</p>
+<blockquote>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 使用会话编号</span></span><br><span class="line">$ tmux kill-session -t 0</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用会话名称</span></span><br><span class="line">$ tmux kill-session -t &lt;session-name&gt;</span><br></pre></td></tr></table></figure>
+</blockquote>
+<h3 id="3-5-切换会话"><a href="#3-5-切换会话" class="headerlink" title="3.5 切换会话"></a>3.5 切换会话</h3><p><code>tmux switch</code>命令用于切换会话。</p>
+<blockquote>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 使用会话编号</span></span><br><span class="line">$ tmux switch -t 0</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用会话名称</span></span><br><span class="line">$ tmux switch -t &lt;session-name&gt;</span><br></pre></td></tr></table></figure>
+</blockquote>
+<h3 id="3-6-重命名会话"><a href="#3-6-重命名会话" class="headerlink" title="3.6 重命名会话"></a>3.6 重命名会话</h3><p><code>tmux rename-session</code>命令用于重命名会话。</p>
+<blockquote>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ tmux rename-session -t 0 &lt;new-name&gt;</span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>上面命令将 0 号会话重命名。</p>
+<h3 id="3-7-会话快捷键"><a href="#3-7-会话快捷键" class="headerlink" title="3.7 会话快捷键"></a>3.7 会话快捷键</h3><p>下面是一些会话相关的快捷键。</p>
+<blockquote>
+<ul>
+<li><code>Ctrl+b d</code>：分离当前会话。</li>
+<li><code>Ctrl+b s</code>：列出所有会话。</li>
+<li><code>Ctrl+b $</code>：重命名当前会话。</li>
+</ul>
+</blockquote>
+<h2 id="四、最简操作流程"><a href="#四、最简操作流程" class="headerlink" title="四、最简操作流程"></a>四、最简操作流程</h2><p>综上所述，以下是 Tmux 的最简操作流程。</p>
+<blockquote>
+<ol>
+<li>新建会话<code>tmux new -s my_session</code>。</li>
+<li>在 Tmux 窗口运行所需的程序。</li>
+<li>按下快捷键<code>Ctrl+b d</code>将会话分离。</li>
+<li>下次使用时，重新连接到会话<code>tmux attach-session -t my_session</code>。</li>
+</ol>
+</blockquote>
+<h2 id="五、窗格操作"><a href="#五、窗格操作" class="headerlink" title="五、窗格操作"></a>五、窗格操作</h2><p>Tmux 可以将窗口分成多个窗格（pane），每个窗格运行不同的命令。以下命令都是在 Tmux 窗口中执行。</p>
+<h3 id="5-1-划分窗格"><a href="#5-1-划分窗格" class="headerlink" title="5.1 划分窗格"></a>5.1 划分窗格</h3><p><code>tmux split-window</code>命令用来划分窗格。</p>
+<blockquote>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 划分上下两个窗格</span></span><br><span class="line">$ tmux split-window</span><br><span class="line"></span><br><span class="line"><span class="comment"># 划分左右两个窗格</span></span><br><span class="line">$ tmux split-window -h</span><br></pre></td></tr></table></figure>
+</blockquote>
+<p><img src="https://www.wangbase.com/blogimg/asset/201910/bg2019102007.jpg" alt="img"></p>
+<h3 id="5-2-移动光标"><a href="#5-2-移动光标" class="headerlink" title="5.2 移动光标"></a>5.2 移动光标</h3><p><code>tmux select-pane</code>命令用来移动光标位置。</p>
+<blockquote>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 光标切换到上方窗格</span></span><br><span class="line">$ tmux select-pane -U</span><br><span class="line"></span><br><span class="line"><span class="comment"># 光标切换到下方窗格</span></span><br><span class="line">$ tmux select-pane -D</span><br><span class="line"></span><br><span class="line"><span class="comment"># 光标切换到左边窗格</span></span><br><span class="line">$ tmux select-pane -L</span><br><span class="line"></span><br><span class="line"><span class="comment"># 光标切换到右边窗格</span></span><br><span class="line">$ tmux select-pane -R</span><br></pre></td></tr></table></figure>
+</blockquote>
+<h3 id="5-3-交换窗格位置"><a href="#5-3-交换窗格位置" class="headerlink" title="5.3 交换窗格位置"></a>5.3 交换窗格位置</h3><p><code>tmux swap-pane</code>命令用来交换窗格位置。</p>
+<blockquote>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 当前窗格上移</span></span><br><span class="line">$ tmux swap-pane -U</span><br><span class="line"></span><br><span class="line"><span class="comment"># 当前窗格下移</span></span><br><span class="line">$ tmux swap-pane -D</span><br></pre></td></tr></table></figure>
+</blockquote>
+<h3 id="5-4-窗格快捷键"><a href="#5-4-窗格快捷键" class="headerlink" title="5.4 窗格快捷键"></a>5.4 窗格快捷键</h3><p>下面是一些窗格操作的快捷键。</p>
+<blockquote>
+<ul>
+<li><code>Ctrl+b %</code>：划分左右两个窗格。</li>
+<li><code>Ctrl+b &quot;</code>：划分上下两个窗格。</li>
+<li><code>Ctrl+b &lt;arrow key&gt;</code>：光标切换到其他窗格。<code>&lt;arrow key&gt;</code>是指向要切换到的窗格的方向键，比如切换到下方窗格，就按方向键<code>↓</code>。</li>
+<li><code>Ctrl+b ;</code>：光标切换到上一个窗格。</li>
+<li><code>Ctrl+b o</code>：光标切换到下一个窗格。</li>
+<li><code>Ctrl+b &#123;</code>：当前窗格与上一个窗格交换位置。</li>
+<li><code>Ctrl+b &#125;</code>：当前窗格与下一个窗格交换位置。</li>
+<li><code>Ctrl+b Ctrl+o</code>：所有窗格向前移动一个位置，第一个窗格变成最后一个窗格。</li>
+<li><code>Ctrl+b Alt+o</code>：所有窗格向后移动一个位置，最后一个窗格变成第一个窗格。</li>
+<li><code>Ctrl+b x</code>：关闭当前窗格。</li>
+<li><code>Ctrl+b !</code>：将当前窗格拆分为一个独立窗口。</li>
+<li><code>Ctrl+b z</code>：当前窗格全屏显示，再使用一次会变回原来大小。</li>
+<li><code>Ctrl+b Ctrl+&lt;arrow key&gt;</code>：按箭头方向调整窗格大小。</li>
+<li><code>Ctrl+b q</code>：显示窗格编号。</li>
+</ul>
+</blockquote>
+<h2 id="六、窗口管理"><a href="#六、窗口管理" class="headerlink" title="六、窗口管理"></a>六、窗口管理</h2><p>除了将一个窗口划分成多个窗格，Tmux 也允许新建多个窗口。</p>
+<h3 id="6-1-新建窗口"><a href="#6-1-新建窗口" class="headerlink" title="6.1 新建窗口"></a>6.1 新建窗口</h3><p><code>tmux new-window</code>命令用来创建新窗口。</p>
+<blockquote>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ tmux new-window</span><br><span class="line"></span><br><span class="line"><span class="comment"># 新建一个指定名称的窗口</span></span><br><span class="line">$ tmux new-window -n &lt;window-name&gt;</span><br></pre></td></tr></table></figure>
+</blockquote>
+<h3 id="6-2-切换窗口"><a href="#6-2-切换窗口" class="headerlink" title="6.2 切换窗口"></a>6.2 切换窗口</h3><p><code>tmux select-window</code>命令用来切换窗口。</p>
+<blockquote>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 切换到指定编号的窗口</span></span><br><span class="line">$ tmux select-window -t &lt;window-number&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 切换到指定名称的窗口</span></span><br><span class="line">$ tmux select-window -t &lt;window-name&gt;</span><br></pre></td></tr></table></figure>
+</blockquote>
+<h3 id="6-3-重命名窗口"><a href="#6-3-重命名窗口" class="headerlink" title="6.3 重命名窗口"></a>6.3 重命名窗口</h3><p><code>tmux rename-window</code>命令用于为当前窗口起名（或重命名）。</p>
+<blockquote>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ tmux rename-window &lt;new-name&gt;</span><br></pre></td></tr></table></figure>
+</blockquote>
+<h3 id="6-4-窗口快捷键"><a href="#6-4-窗口快捷键" class="headerlink" title="6.4 窗口快捷键"></a>6.4 窗口快捷键</h3><p>下面是一些窗口操作的快捷键。</p>
+<blockquote>
+<ul>
+<li><code>Ctrl+b c</code>：创建一个新窗口，状态栏会显示多个窗口的信息。</li>
+<li><code>Ctrl+b p</code>：切换到上一个窗口（按照状态栏上的顺序）。</li>
+<li><code>Ctrl+b n</code>：切换到下一个窗口。</li>
+<li><code>Ctrl+b &lt;number&gt;</code>：切换到指定编号的窗口，其中的<code>&lt;number&gt;</code>是状态栏上的窗口编号。</li>
+<li><code>Ctrl+b w</code>：从列表中选择窗口。</li>
+<li><code>Ctrl+b ,</code>：窗口重命名。</li>
+</ul>
+</blockquote>
+<h2 id="七、其他命令"><a href="#七、其他命令" class="headerlink" title="七、其他命令"></a>七、其他命令</h2><p>下面是一些其他命令。</p>
+<blockquote>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 列出所有快捷键，及其对应的 Tmux 命令</span></span><br><span class="line">$ tmux list-keys</span><br><span class="line"></span><br><span class="line"><span class="comment"># 列出所有 Tmux 命令及其参数</span></span><br><span class="line">$ tmux list-commands</span><br><span class="line"></span><br><span class="line"><span class="comment"># 列出当前所有 Tmux 会话的信息</span></span><br><span class="line">$ tmux info</span><br><span class="line"></span><br><span class="line"><span class="comment"># 重新加载当前的 Tmux 配置</span></span><br><span class="line">$ tmux source-file ~/.tmux.conf</span><br></pre></td></tr></table></figure>
+</blockquote>
+<h2 id="八、参考链接"><a href="#八、参考链接" class="headerlink" title="八、参考链接"></a>八、参考链接</h2><ul>
+<li><a href="https://www.hamvocke.com/blog/a-quick-and-easy-guide-to-tmux/">A Quick and Easy Guide to tmux</a></li>
+<li><a href="https://danielmiessler.com/study/tmux/">Tactical tmux: The 10 Most Important Commands</a></li>
+<li><a href="https://linuxize.com/post/getting-started-with-tmux/">Getting started with Tmux</a></li>
+</ul>
+<p>（完）</p>
+<h3 id="文档信息"><a href="#文档信息" class="headerlink" title="文档信息"></a>文档信息</h3><ul>
+<li>版权声明：自由转载-非商用-非衍生-保持署名（<a href="https://creativecommons.org/licenses/by-nc-nd/3.0/deed.zh">创意共享 3.0 许可证</a>）</li>
+<li>发表日期： 2019 年 10 月 21 日</li>
+</ul>
+<p>mailto:<a href="mailto:&#121;&#105;&#102;&#101;&#x6e;&#x67;&#46;&#114;&#117;&#x61;&#x6e;&#64;&#x67;&#109;&#97;&#x69;&#x6c;&#46;&#99;&#x6f;&#x6d;">&#121;&#105;&#102;&#101;&#x6e;&#x67;&#46;&#114;&#117;&#x61;&#x6e;&#64;&#x67;&#109;&#97;&#x69;&#x6c;&#46;&#99;&#x6f;&#x6d;</a>)</p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>SSH</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>java基础泛型</title>
+    <url>/2022/05/31/java%E5%9F%BA%E7%A1%80%E6%B3%9B%E5%9E%8B/</url>
+    <content><![CDATA[<h1 id="泛型"><a href="#泛型" class="headerlink" title="泛型"></a>泛型</h1><ul>
+<li>泛型类</li>
+<li>泛型接口</li>
+<li>泛型方法</li>
+</ul>
+<p>定义泛型方法时，必须在返回值前边加一个<code>&lt;T&gt;</code>，来声明这是一个泛型方法，持有一个泛型<code>T</code>，然后才可以用泛型 T 作为方法的返回值。</p>
+<p>作用 减少强制类型转换来确保类型安全.</p>
+<h2 id="泛型的上下限"><a href="#泛型的上下限" class="headerlink" title="泛型的上下限"></a>泛型的上下限</h2><p>限制传入的参数为某种类型的子类或父类</p>
+<p>上限</p>
+<p><code>class info&lt;T extend number&gt;&#123;&#125;</code> 此处的泛型只能是数字类型</p>
+<p>下限</p>
+<p><code>class info&lt;? super String&gt;&#123;&#125;</code> 此处传入的参数只能是 String 或 Object 的泛型</p>
+<p>PECS 原则</p>
+<p>上下界通配符的使用应当遵循 PECS 原则：Producer Extends，Consumer Super。</p>
+<p>限定通配符总是包括自己</p>
+<p>上界类型通配符：add 方法受限</p>
+<p>下界类型通配符：get 方法受限</p>
+<p>如果你想从一个数据类型里获取数据，使用 ? extends 通配符</p>
+<p>如果你想把对象写入一个数据结构里，使用 ? super 通配符</p>
+<h2 id="伪泛型"><a href="#伪泛型" class="headerlink" title="伪泛型"></a>伪泛型</h2><p>类型擦除 在编译阶段所有尖括号内的内容被替换为具体内容</p>
+<h3 id="类型擦除的原则"><a href="#类型擦除的原则" class="headerlink" title="类型擦除的原则"></a>类型擦除的原则</h3><ul>
+<li>消除类型参数声明,删除&lt;&gt;包围的内容</li>
+<li>根据类型参数上下界推断并替换所有类型参数为原生态类型:1.如果使用的是无限制通配符&lt;?&gt; 或者没有上下界限定,替换为 Object 2.如果存在上下界限定,根据子类替换原则去类型参数的最左边限定类型(父类)</li>
+<li>为了保证安全,必要时插入强制类型转换</li>
+<li>自动产生桥接方法,以保证擦除类型后的代码依然有泛型的多态性</li>
+</ul>
+<h3 id="泛型的编译期检查"><a href="#泛型的编译期检查" class="headerlink" title="泛型的编译期检查"></a>泛型的编译期检查</h3><p>泛型的类型检测是在编译前进行的.检查时只针对引用进行类型检测,而对实际引用的对象类型并不关心.例如:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">ArrayList&lt;String&gt; list1 = <span class="keyword">new</span> <span class="title class_">ArrayList</span>();</span><br><span class="line">        list1.add(<span class="string">&quot;1&quot;</span>); <span class="comment">//编译通过</span></span><br><span class="line">        list1.add(<span class="number">1</span>); <span class="comment">//编译错误</span></span><br><span class="line"></span><br><span class="line"><span class="type">ArrayList</span> <span class="variable">list2</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;String&gt;();<span class="comment">//泛型的编译检查不关心实际引用的对象.</span></span><br><span class="line">        list2.add(<span class="string">&quot;1&quot;</span>); <span class="comment">//编译通过</span></span><br><span class="line">        list2.add(<span class="number">1</span>); <span class="comment">//编译通过</span></span><br></pre></td></tr></table></figure>
+
+<p>泛型中不存在继承关系,传递引用给不同的父类或子类(上转型和下转型)会导致编译错误如:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">ArrayList&lt;String&gt; list1 = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;Object&gt;(); <span class="comment">//编译错误</span></span><br><span class="line">ArrayList&lt;Object&gt; list2 = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;String&gt;(); <span class="comment">//编译错误</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="泛型的桥接方法"><a href="#泛型的桥接方法" class="headerlink" title="泛型的桥接方法"></a>泛型的桥接方法</h2><p>类型擦除会造成多态冲突,JVM 使用桥接方法解决这个问题</p>
+<p>继承泛型类的子类的方法中定义了泛型的具体类型.但是在父类中使用相同的具体类型,编译期的类型擦除会导致子类的方法与父类的参数类型不一致,进而导致重写方法变成了重载.</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Pair</span>&lt;T&gt; &#123;</span><br><span class="line">    <span class="keyword">private</span> T value;</span><br><span class="line">    <span class="keyword">public</span> T <span class="title function_">getValue</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> value;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setValue</span><span class="params">(T value)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.value = value;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">DateInter</span> <span class="keyword">extends</span> <span class="title class_">Pair</span>&lt;Date&gt; &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setValue</span><span class="params">(Date value)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>.setValue(value);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Date <span class="title function_">getValue</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">super</span>.getValue();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><u><strong>此时子类中的方法不是重写而是重载</strong>.</u>因为父类方法中的参数是 Object,子类是 Date(这也成为协变返回类型,子类重写方法的返回值不必与父类一直,可以是更狭窄的范围) 出现在语义上重写而在 jvm 看来是重写的问题(只有参数类型与返回类型一致时 jvm 才会看做重写)</p>
+<p>因此 JVM 会使用桥接方法来处理这一问题,编译器会自动生成桥接方法来保证重写的语义.</p>
+<p>在生成的桥接方法中会调用我们重写的方法.</p>
+<h2 id="泛型不允许实例化"><a href="#泛型不允许实例化" class="headerlink" title="泛型不允许实例化"></a>泛型不允许实例化</h2><p>由于类型擦除的存在编译器无法确定泛型参数类型.</p>
+<h3 id="泛型数组不能用具体类型进行实例化"><a href="#泛型数组不能用具体类型进行实例化" class="headerlink" title="泛型数组不能用具体类型进行实例化"></a>泛型数组不能用具体类型进行实例化</h3><p>Java 中是不能创建一个确切的泛型类型的数组的，除非是采用通配符的方式且要做显式类型转换才可以。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">List&lt;String&gt;[] list11 = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;String&gt;[<span class="number">10</span>]; <span class="comment">//编译错误，非法创建</span></span><br><span class="line">List&lt;String&gt;[] list12 = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;?&gt;[<span class="number">10</span>]; <span class="comment">//编译错误，需要强转类型</span></span><br><span class="line">List&lt;String&gt;[] list13 = (List&lt;String&gt;[]) <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;?&gt;[<span class="number">10</span>]; <span class="comment">//OK，但是会有警告</span></span><br><span class="line">List&lt;?&gt;[] list14 = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;String&gt;[<span class="number">10</span>]; <span class="comment">//编译错误，非法创建</span></span><br><span class="line">List&lt;?&gt;[] list15 = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;?&gt;[<span class="number">10</span>]; <span class="comment">//OK</span></span><br><span class="line">List&lt;String&gt;[] list6 = <span class="keyword">new</span> <span class="title class_">ArrayList</span>[<span class="number">10</span>]; <span class="comment">//OK，但是会有警告</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="异常中使用泛型"><a href="#异常中使用泛型" class="headerlink" title="异常中使用泛型"></a>异常中使用泛型</h2><p>在异常中使用泛型不能通过编译.因为异常出现在运行期.在编译期由于类型擦除,所有异常中的泛型会被替换为 Object .所以不能在 catch 子句中使用泛型变量,但是可以使用类型变量.</p>
+]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>Java泛型</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>java注解</title>
+    <url>/2022/05/31/java%E6%B3%A8%E8%A7%A3/</url>
+    <content><![CDATA[<h1 id="注解"><a href="#注解" class="headerlink" title="注解"></a>注解</h1><ul>
+<li>java 自带注解 @Override @Deprecated @SupressWarning</li>
+<li>元注解 定义注解的注解</li>
+<li>自定义注解 由元注解自定义的注解</li>
+</ul>
+<h2 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h2><ul>
+<li>生成文档 标识元数据生成 javadoc 文档</li>
+<li>编译检查 标识元数据进行编译检查</li>
+<li>编译时动态处理 动态生成代码</li>
+<li>运行时动态处理 使用反射注入实例</li>
+</ul>
+<h2 id="java-内置注解"><a href="#java-内置注解" class="headerlink" title="java 内置注解"></a>java 内置注解</h2><ul>
+<li><code>@Override</code>：表示当前的方法定义将覆盖父类中的方法</li>
+<li><code>@Deprecated</code>：表示代码被弃用，如果使用了被@Deprecated 注解的代码则编译器将发出警告</li>
+<li><code>@SuppressWarnings</code>：表示关闭编译器警告信息</li>
+</ul>
+<h3 id="Override"><a href="#Override" class="headerlink" title="@Override"></a><code>@Override</code></h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Target(ElementType.METHOD)</span></span><br><span class="line"><span class="meta">@Rentention(RetentionPolicy.SOURCE)</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> Override&#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>用于修饰方法 编译时有效(源文件保留,编译后字节码不存在)</p>
+<h3 id="Deprecated"><a href="#Deprecated" class="headerlink" title="@Deprecated"></a><code>@Deprecated</code></h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Documented</span></span><br><span class="line"><span class="meta">@Retention(RetentionPolicy.RUNTIME)</span></span><br><span class="line"><span class="meta">@Target(value=&#123;CONSTRUCTOR, FIELD, LOCAL_VARIABLE, METHOD, PACKAGE, PARAMETER, TYPE&#125;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> Deprecated &#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>被文档化，能够保留到运行时，能够修饰构造方法、属性、局部变量、方法、包、参数、类型。这个注解的作用是告诉编译器被修饰的程序元素已被“废弃”，不再建议用户使用。</p>
+<h3 id="SuppressWarnings"><a href="#SuppressWarnings" class="headerlink" title="@SuppressWarnings"></a><code>@SuppressWarnings</code></h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Target(&#123;TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE&#125;)</span></span><br><span class="line"><span class="meta">@Retention(RetentionPolicy.SOURCE)</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> SuppressWarnings &#123;</span><br><span class="line">    String[] value();</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>修饰的程序元素包括类型、属性、方法、参数、构造器、局部变量，只能存活在源码时，取值为 String[]。</p>
+<p>告诉编译器忽略指定的警告信息</p>
+<p>取值范围</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>作用</th>
+<th>原描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>all</td>
+<td>抑制所有警告</td>
+<td>to suppress all warnings</td>
+</tr>
+<tr>
+<td>boxing</td>
+<td>抑制装箱、拆箱操作时候的警告</td>
+<td>to suppress warnings relative to boxing&#x2F;unboxing operations</td>
+</tr>
+<tr>
+<td>cast</td>
+<td>抑制映射相关的警告</td>
+<td>to suppress warnings relative to cast operations</td>
+</tr>
+<tr>
+<td>dep-ann</td>
+<td>抑制启用注释的警告</td>
+<td>to suppress warnings relative to deprecated annotation</td>
+</tr>
+<tr>
+<td>deprecation</td>
+<td>抑制过期方法警告</td>
+<td>to suppress warnings relative to deprecation</td>
+</tr>
+<tr>
+<td>fallthrough</td>
+<td>抑制确在 switch 中缺失 breaks 的警告</td>
+<td>to suppress warnings relative to missing breaks in switch statements</td>
+</tr>
+<tr>
+<td>finally</td>
+<td>抑制 finally 模块没有返回的警告</td>
+<td>to suppress warnings relative to finally block that don’t return</td>
+</tr>
+<tr>
+<td>hiding</td>
+<td>抑制与隐藏变数的区域变数相关的警告</td>
+<td>to suppress warnings relative to locals that hide variable（）</td>
+</tr>
+<tr>
+<td>incomplete-switch</td>
+<td>忽略没有完整的 switch 语句</td>
+<td>to suppress warnings relative to missing entries in a switch statement (enum case)</td>
+</tr>
+<tr>
+<td>nls</td>
+<td>忽略非 nls 格式的字符</td>
+<td>to suppress warnings relative to non-nls string literals</td>
+</tr>
+<tr>
+<td>null</td>
+<td>忽略对 null 的操作</td>
+<td>to suppress warnings relative to null analysis</td>
+</tr>
+<tr>
+<td>rawtype</td>
+<td>使用 generics 时忽略没有指定相应的类型</td>
+<td>to suppress warnings relative to un-specific types when using</td>
+</tr>
+<tr>
+<td>restriction</td>
+<td>抑制与使用不建议或禁止参照相关的警告</td>
+<td>to suppress warnings relative to usage of discouraged or</td>
+</tr>
+<tr>
+<td>serial</td>
+<td>忽略在 serializable 类中没有声明 serialVersionUID 变量</td>
+<td>to suppress warnings relative to missing serialVersionUID field for a serializable class</td>
+</tr>
+<tr>
+<td>static-access</td>
+<td>抑制不正确的静态访问方式警告</td>
+<td>to suppress warnings relative to incorrect static access</td>
+</tr>
+<tr>
+<td>synthetic-access</td>
+<td>抑制子类没有按最优方法访问内部类的警告</td>
+<td>to suppress warnings relative to unoptimized access from inner classes</td>
+</tr>
+<tr>
+<td>unchecked</td>
+<td>抑制没有进行类型检查操作的警告</td>
+<td>to suppress warnings relative to unchecked operations</td>
+</tr>
+<tr>
+<td>unqualified-field-access</td>
+<td>抑制没有权限访问的域的警告</td>
+<td>to suppress warnings relative to field access unqualified</td>
+</tr>
+<tr>
+<td>unused</td>
+<td>抑制没被使用过的代码的警告</td>
+<td>to suppress warnings relative to unused code</td>
+</tr>
+</tbody></table>
+<h2 id="元注解"><a href="#元注解" class="headerlink" title="元注解"></a>元注解</h2><h3 id="Target"><a href="#Target" class="headerlink" title="@Target"></a>@Target</h3><p>描述注解作用的范围:用于描述修饰的注解可以用在什么类型上</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> <span class="title class_">ElementType</span> &#123;</span><br><span class="line"></span><br><span class="line">    TYPE, <span class="comment">// 类、接口、枚举类</span></span><br><span class="line"></span><br><span class="line">    FIELD, <span class="comment">// 成员变量（包括：枚举常量）</span></span><br><span class="line"></span><br><span class="line">    METHOD, <span class="comment">// 成员方法</span></span><br><span class="line"></span><br><span class="line">    PARAMETER, <span class="comment">// 方法参数</span></span><br><span class="line"></span><br><span class="line">    CONSTRUCTOR, <span class="comment">// 构造方法</span></span><br><span class="line"></span><br><span class="line">    LOCAL_VARIABLE, <span class="comment">// 局部变量</span></span><br><span class="line"></span><br><span class="line">    ANNOTATION_TYPE, <span class="comment">// 注解类</span></span><br><span class="line"></span><br><span class="line">    PACKAGE, <span class="comment">// 可用于修饰：包</span></span><br><span class="line"></span><br><span class="line">    TYPE_PARAMETER, <span class="comment">// 类型参数，JDK 1.8 新增</span></span><br><span class="line"></span><br><span class="line">    TYPE_USE <span class="comment">// 使用类型的任何地方，JDK 1.8 新增</span></span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="Retention-RetentionTarget"><a href="#Retention-RetentionTarget" class="headerlink" title="@Retention &amp; @RetentionTarget"></a>@Retention &amp; @RetentionTarget</h3><p>Reteniton 注解用来限定那些被它所注解的注解类在注解到其他类上以后，可被保留到何时，一共有三种策略，定义在 RetentionPolicy 枚举中。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> <span class="title class_">RetentionPolicy</span> &#123;</span><br><span class="line"></span><br><span class="line">    SOURCE,    <span class="comment">// 源文件保留</span></span><br><span class="line">    CLASS,       <span class="comment">// 编译期保留，默认值</span></span><br><span class="line">    RUNTIME   <span class="comment">// 运行期保留，可通过反射去获取注解信息</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="Documented"><a href="#Documented" class="headerlink" title="@Documented"></a>@Documented</h3><p>描述在使用 javadoc 工具为类生成帮助文档时是否要保留其注解信息。</p>
+<h3 id="Inherited"><a href="#Inherited" class="headerlink" title="@Inherited"></a>@Inherited</h3><p>被它修饰的 Annotation 将具有继承性。如果某个类使用了被@Inherited 修饰的 Annotation，则其子类将自动具有该注解。</p>
+<h2 id="注解与反射接口"><a href="#注解与反射接口" class="headerlink" title="注解与反射接口"></a>注解与反射接口</h2><p>反射包 java.lang.reflect 下的 AnnitatedElement 接口提供这些方法.这里注意,只有注解被被定义为 RUNTIME 时才能运行时可见</p>
+<p>AnntatedElemented 是所有</p>
+<p>程序元素(Class,Method,Constructor)的父接口.程序通过反射获取某个类的 AnnotatedElement 对象就可以通过反射调用该对象的 Annotation 信息</p>
+<ul>
+<li><code>boolean isAnnotationPresent(Class&lt;?extends Annotstion&gt; annotationClass)</code></li>
+</ul>
+<p>​ 判断该程序元素上是否包含指定类型的注解 存在返回 True 否则返回 False，此方法会忽略注解对应的注解容器。</p>
+<ul>
+<li><code>&lt;T ectends Annotstion&gt; T getAnnotation(Class&lt;T&gt; annotationClass)</code></li>
+</ul>
+<p>​ 返回该程序元素上存在的,制定类型的的注解,如果指定类型的注解不存在,返回 null</p>
+<ul>
+<li><code>Annotation[] getAnnotions()</code></li>
+</ul>
+<p>​ 返回该程序上的所有注解,没有则返回长度为 0 的数组</p>
+<ul>
+<li><p><code>&lt;T extends Annotation&gt; T[] getAnnotationsByType(Class&lt;T&gt; annotationClass)</code></p>
+<p>​ 返回该程序指定类型的注解数组,如果不存在,则返回长度为 0 的数组</p>
+<p>​ <code>getAnnotationsByType</code>方法与 <code>getAnnotation</code>的区别在于，<code>getAnnotationsByType</code>会检测注解对应的重复注解容器。若程序元素为类，当前类上找不到注解，且该注解为可继承的，则会去父类上检测对应的注解。</p>
+<ul>
+<li><p><code>&lt;T extends Annotation&gt; T getDeclaredAnnotation(Class&lt;T&gt; annotationClass)</code></p>
+<p>返回存此元素上的所有注解. 忽略继承的注解</p>
+</li>
+</ul>
+</li>
+<li><p><code>&lt;T extends Annotation&gt; T[] getDeclaredAnnotationsByType(Class&lt;T&gt; annotationClass)</code></p>
+</li>
+</ul>
+<p>​ 返回存此元素上的指定类型的注解. 忽略继承的注解</p>
+<ul>
+<li><p><code>Annotation[] getDeclareAnnotations()</code></p>
+<p>​ 返回直接存在于此元素上的所有注解及注解对应的重复注解容器。与此接口中的其他方法不同，该方法将忽略继承的注解。如果没有注释直接存在于此元素上，则返回长度为零的一个数组。该方法的调用者可以随意修改返回的数组，而不会对其他调用者返回的数组产生任何影响。</p>
+</li>
+</ul>
+<h1 id="注解不支持继承"><a href="#注解不支持继承" class="headerlink" title="注解不支持继承"></a>注解不支持继承</h1><p>可以使用@inherited 注解使子类具有该注解</p>
+]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>Java注解</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>vim 目录树</title>
+    <url>/2024/04/07/vim%20%E7%9B%AE%E5%BD%95%E6%A0%91/</url>
+    <content><![CDATA[<h1 id="Nerdtree的安装"><a href="#Nerdtree的安装" class="headerlink" title="Nerdtree的安装"></a>Nerdtree的安装</h1><hr>
+<ol>
+<li>进入.vim&#x2F;bundle目录.</li>
+<li>执行git clone <a href="https://link.jianshu.com/?t=https://github.com/scrooloose/nerdtree">https://github.com/scrooloose/nerdtree</a>.</li>
+<li>下载完成后，在bundle下会多出一个nerdtree的文件夹，所有相关插件都在该文件夹下.</li>
+<li>在终端进入项目文件夹, 输入<code>vim .</code>,即可看到树形目录.</li>
+</ol>
+<p>快捷键</p>
+<hr>
+<p>h j k l移动光标定位<br>ctrl+w+w 光标在左右窗口切换<br>ctrl+w+r 切换当前窗口左右布局<br>ctrl+p 模糊搜索文件<br>gT 切换到前一个tab<br>g t 切换到后一个tab</p>
+<blockquote>
+<p>可以在.vimrc里为标签页进行的配置，通过ctrl h&#x2F;l切换标签等<br>let mapleader &#x3D; ‘,’<br>nnoremap <C-l> gt<br>nnoremap <C-h> gT<br>nnoremap <leader>t : tabe<CR></p>
+</blockquote>
+<p>o 打开关闭文件或者目录，如果是文件的话，光标出现在打开的文件中<br>O 打开结点下的所有目录<br>X 合拢当前结点的所有目录<br>x 合拢当前结点的父目录</p>
+<p>i和s水平分割或纵向分割窗口打开文件<br>u 打开上层目录<br>t 在标签页中打开<br>T 在后台标签页中打开</p>
+<p>p 到上层目录<br>P 到根目录<br>K 到同目录第一个节点<br>J 到同目录最后一个节点<br>m 显示文件系统菜单（添加、删除、移动操作）<br>? 帮助<br>:q 关闭</p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>Vim</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>多模块开发</title>
+    <url>/2024/04/07/%E5%A4%9A%E6%A8%A1%E5%9D%97%E5%BC%80%E5%8F%91/</url>
+    <content><![CDATA[<h1 id="头文件"><a href="#头文件" class="headerlink" title="头文件"></a>头文件</h1><ul>
+<li><p>头文件卫士</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">ifndef</span> MATH_H_</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MATH_H_</span></span><br><span class="line">....</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>类型定义</p>
+</li>
+<li><p>文件包含</p>
+</li>
+<li><p>宏定义</p>
+</li>
+<li><p>条件编译</p>
+</li>
+<li><p>函数声明</p>
+</li>
+<li><p>变量声明</p>
+<p>模块类型文件分为两种: 目标文件, 可执行二进制文件</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nm filename # 查看目标文件内容</span><br></pre></td></tr></table></figure>
+
+<h1 id="GDB-调试"><a href="#GDB-调试" class="headerlink" title="GDB 调试"></a>GDB 调试</h1></li>
+<li><p>list l 显示多行源代码</p>
+</li>
+<li><p>break b 断点</p>
+</li>
+<li><p>run r 运行</p>
+</li>
+<li><p>step s 进入函数调用</p>
+</li>
+<li><p>next n 下一句不进入函数内部</p>
+</li>
+<li><p>print p 打印变量值</p>
+</li>
+<li><p>continue c 继续运行直到断点</p>
+</li>
+<li><p>quit q 退出</p>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>CPP</category>
+      </categories>
+      <tags>
+        <tag>CPP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>java异常机制</title>
+    <url>/2022/05/31/java%E5%BC%82%E5%B8%B8%E6%9C%BA%E5%88%B6/</url>
+    <content><![CDATA[<h1 id="异常机制"><a href="#异常机制" class="headerlink" title="异常机制"></a>异常机制</h1><h2 id="异常的层次结构"><a href="#异常的层次结构" class="headerlink" title="异常的层次结构"></a>异常的层次结构</h2><p>Java 异常都是对象,是 Throwable 的子类的实例</p>
+<p><img src="/Users/richard/Downloads/java-basic-exception-1.png" alt="java-basic-exception-1"></p>
+<ul>
+<li><p>运行时异常 RuntimeException</p>
+<p>java 编译器不会检查它.即使没有 try-catch 捕获,或者 throws 子句声明抛出,依然编译通过</p>
+<ul>
+<li>IndexOutOfBoundsException</li>
+<li>IllegalArgument</li>
+<li>NullPointerException</li>
+<li>ClassCastException</li>
+</ul>
+</li>
+<li><p>编译时异常(非运行时异常)</p>
+<ul>
+<li><p>必须处理的异常,否则无法编译通过</p>
+</li>
+<li><p>IOException</p>
+</li>
+<li><p>SQLException</p>
+</li>
+<li><p>ClassNotFound</p>
+</li>
+</ul>
+</li>
+<li><p>不可查异常(unchecked exceptions)</p>
+<p>运行时异常 runtimeException 和错误 error</p>
+</li>
+<li><p>可查异常(checked exceptions)</p>
+<p>除 runtimeException 和其他子类</p>
+</li>
+</ul>
+<h2 id="异常关键字"><a href="#异常关键字" class="headerlink" title="异常关键字"></a>异常关键字</h2><p>try 将被监听的代码放入 try 语句块中.try 语句块中出现异常,异常就被抛出</p>
+<p>catch 用于捕获 try 语句块中发生的异常</p>
+<p>finally 无论是否发生异常,finally 中的语句都会被执行 主要用于回收 try 语句块中打开的资源</p>
+<p>​ 只有 finally 执行完之后才会执行 catch 或 try 中的 return 或 throw 语句.</p>
+<p>​ 如果 finally 中使用了 return 或 throws 语句,将会直接停止而不是执行 try 或 catch 中的语句.</p>
+<p>throw 用于抛出异常</p>
+<p>throws 用于方法签名中,声明该方法可能抛出的异常</p>
+<h2 id="异常的申明-throws"><a href="#异常的申明-throws" class="headerlink" title="异常的申明(throws)"></a>异常的申明(throws)</h2><p>如果方法中存在异常,不对其进行捕获,那么需要在方法头显式声明异常 使用 throws 接上声明的异常,多个异常使用” , “隔开.</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">method</span><span class="params">()</span> <span class="keyword">throws</span> IOException,FileNotFoundException&#123;</span><br><span class="line"><span class="comment">//.....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果父类方法没有声明该异常,那么子类继承父类后也不能声明异常</p>
+<p>通常应该捕获知道如何处理的异常,对于不知道如何处理的异常,应该传递下去,在方法的签名处使用 throws 关键字声明可能抛出的异常</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">readFile</span><span class="params">(String filePath)</span> <span class="keyword">throws</span> IOException&#123;</span><br><span class="line"><span class="type">File</span> <span class="variable">file</span> <span class="operator">=</span><span class="keyword">new</span> <span class="title class_">File</span>(filePath);</span><br><span class="line">String reult;</span><br><span class="line"><span class="type">BufferedReader</span> <span class="variable">reader</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedReader</span>(<span class="keyword">new</span> <span class="title class_">FileReader</span>(file));</span><br><span class="line"><span class="keyword">while</span>((result =reader.readLine())! = <span class="literal">null</span>)&#123;</span><br><span class="line">System.out.println(result);</span><br><span class="line">&#125;reader.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>对于不可查异常,(error 和 runtimeException 和其子类)不可以使用 throws</p>
+</li>
+<li><p>必须声明该方法可以抛出的任何可查异常 checkException</p>
+</li>
+<li><p>调用方法必须遵循任何可查异常的处理和声明规则. 如果覆盖一个方法不能声明与覆盖方法不同的异常,声明的异常必须是被覆盖方法的同类或子类</p>
+</li>
+</ul>
+<h2 id="异常的抛出-throw"><a href="#异常的抛出-throw" class="headerlink" title="异常的抛出(throw)"></a>异常的抛出(throw)</h2><p>如果代码可能会引发某种错误,可以创建一个异常类实例并抛出他.</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="type">double</span> <span class="title function_">method</span><span class="params">(<span class="type">int</span> value)</span>&#123;</span><br><span class="line">  <span class="keyword">if</span>(value==<span class="number">0</span>)&#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ArithmeticException</span>(<span class="string">&quot;not 0&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">5.0</span>/value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>大多情况不需要手动抛出异常,java 大部分方法已经处理异常或声明异常,只需要捕获异常或者往上抛</p>
+<h2 id="自定义异常"><a href="#自定义异常" class="headerlink" title="自定义异常"></a>自定义异常</h2><p>定义一个异常类应包含两个构造函数,一个无参构造函数和一个带有详细描述信息的构造函数</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyException</span> <span class="keyword">extends</span> <span class="title class_">Exception</span>&#123;</span><br><span class="line">  <span class="keyword">public</span> <span class="title function_">MyException</span><span class="params">()</span>&#123;&#125;</span><br><span class="line">  <span class="keyword">public</span> <span class="title function_">MyException</span><span class="params">(String msg)</span>&#123;</span><br><span class="line">    <span class="built_in">super</span>(msg);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="异常的捕获"><a href="#异常的捕获" class="headerlink" title="异常的捕获"></a>异常的捕获</h2><h3 id="try-catch"><a href="#try-catch" class="headerlink" title="try-catch"></a>try-catch</h3><p>可以捕获多个异常并作出处理</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">ptivate <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">readFile</span><span class="params">(String filePath)</span>&#123;</span><br><span class="line"><span class="keyword">try</span>&#123;&#125;</span><br><span class="line"><span class="keyword">catch</span> (FileNotFoundException e)&#123;&#125;</span><br><span class="line"><span class="keyword">catch</span>(IOException e)&#123;&#125;</span><br><span class="line">  <span class="comment">//OR like this</span></span><br><span class="line">  <span class="comment">//捕获多个异常</span></span><br><span class="line">  <span class="keyword">catch</span>(FileNotFoundException | UnknowHostException e)&#123;&#125;</span><br><span class="line">  <span class="keyword">catch</span>(IOException e)&#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Try-catch-finally"><a href="#Try-catch-finally" class="headerlink" title="Try-catch-finally"></a>Try-catch-finally</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">try</span>&#123;&#125;</span><br><span class="line"><span class="keyword">catch</span>(Exception e)&#123;&#125;</span><br><span class="line"><span class="keyword">finally</span>&#123;必定执行的代码&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>当 try 没有捕获到异常时,try 语句块将被一一执行,catch 语句块将被跳过.finally 语句块继续执行</li>
+<li>try 捕获到异常但是 catch 没有相应的处理语句 异常抛给 JVM,finally 语句最后执行,<strong>但是 finally 语句块后的语句不会执行</strong></li>
+<li>try 捕获到异常,catch 有相应的处理,会执行此处理.然后继续执行 finally 语句块.如果 try 或 catch 中有 return 语句,则会先执行 finally 语句在执行 return</li>
+</ul>
+<h3 id="try-finally"><a href="#try-finally" class="headerlink" title="try-finally"></a>try-finally</h3><p>可以直接使用 try-finally. try 捕获到异常,执行完 finally 语句不再继续执行.</p>
+<p>可以用在不需要捕获异常的代码,用于关闭正在使用的资源 例如 IO 流执行完相关操作后关闭相应资源 数据库连接代码的关闭</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="type">ReentrantLock</span> <span class="variable">lock</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ReentrantLock</span>();</span><br><span class="line"><span class="keyword">try</span>&#123;&#125;</span><br><span class="line"><span class="keyword">finally</span>&#123;</span><br><span class="line">  lock.unlock();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在以下情况下 finally 不会执行</p>
+<ul>
+<li><p>前面的代码中使用了 System.exit() 退出了程序</p>
+</li>
+<li><p>finally 语句块中出现异常</p>
+</li>
+<li><p>程序所在的想线程死亡</p>
+</li>
+<li><p>关闭 CPU</p>
+</li>
+</ul>
+<h3 id="Try-with-resource"><a href="#Try-with-resource" class="headerlink" title="Try-with-resource"></a>Try-with-resource</h3><p><em>java7 引入的 try-with-resource</em></p>
+<p>自动释放的资源需要是实现了 AutoCloseable 接口的类。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">//例如Scanner就默认实现了Closeable接口</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">tryWithResource</span><span class="params">()</span>&#123;</span><br><span class="line">	<span class="keyword">try</span>(<span class="type">Scanner</span> <span class="variable">scanner</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Scanner</span>(<span class="keyword">new</span> <span class="title class_">FileInputStream</span>(<span class="string">&quot;c:/abc&quot;</span>),<span class="string">&quot;UTF-8&quot;</span>))&#123;&#125;</span><br><span class="line">	<span class="keyword">catch</span>(IOException e)&#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="常用的异常"><a href="#常用的异常" class="headerlink" title="常用的异常"></a>常用的异常</h2><h3 id="RuntimeException"><a href="#RuntimeException" class="headerlink" title="RuntimeException"></a>RuntimeException</h3><ul>
+<li><code>java.lang.ArrayIndexOutOfBoundsException</code> 数组索引越界异常。当对数组的索引值为负数或大于等于数组大小时抛出。</li>
+<li><code>java.lang.ArithmeticException</code> 算术条件异常。譬如：整数除零等。</li>
+<li><code>java.lang.NullPointerException</code> 空指针异常。当应用试图在要求使用对象的地方使用了 null 时，抛出该异常。譬如：调用 null 对象的实例方法、访问 null 对象的属性、计算 null 对象的长度、使用 throw 语句抛出 null 等等</li>
+<li><code>java.lang.ClassNotFoundException</code> 找不到类异常。当应用试图根据字符串形式的类名构造类，而在遍历 CLASSPAH 之后找不到对应名称的 class 文件时，抛出该异常。</li>
+<li><code>java.lang.NegativeArraySizeException</code> 数组长度为负异常</li>
+<li><code>java.lang.ArrayStoreException</code> 数组中包含不兼容的值抛出的异常</li>
+<li><code>java.lang.SecurityException</code> 安全性异常</li>
+<li><code>java.lang.IllegalArgumentException</code> 非法参数异常</li>
+</ul>
+<h3 id="IOException"><a href="#IOException" class="headerlink" title="IOException"></a>IOException</h3><ul>
+<li><code>IOException</code>：操作输入流和输出流时可能出现的异常。</li>
+<li><code>EOFException</code> 文件已结束异常</li>
+<li><code>FileNotFoundException</code> 文件未找到异常</li>
+</ul>
+<h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3><ul>
+<li><p><code>ClassCastException</code> 类型转换异常类</p>
+</li>
+<li><p><code>ArrayStoreException</code> 数组中包含不兼容的值抛出的异常</p>
+</li>
+<li><p><code>SQLException</code> 操作数据库异常类</p>
+</li>
+<li><p><code>NoSuchFieldException</code> 字段未找到异常</p>
+</li>
+<li><p><code>NoSuchMethodException</code> 方法未找到抛出的异常</p>
+</li>
+<li><p><code>NumberFormatException</code> 字符串转换为数字抛出的异常</p>
+</li>
+<li><p><code>StringIndexOutOfBoundsException</code> 字符串索引超出范围抛出的异常</p>
+</li>
+<li><p><code>IllegalAccessException</code> 不允许访问某类异常</p>
+</li>
+<li><p><code>InstantiationException</code> 当应用程序试图使用 Class 类中的 newInstance()方法创建一个类的实例，而指定的类对象无法被实例化时，抛出该异常</p>
+</li>
+</ul>
+<h2 id="异常的使用"><a href="#异常的使用" class="headerlink" title="异常的使用"></a>异常的使用</h2><h3 id="只针对不正常的情况使用异常"><a href="#只针对不正常的情况使用异常" class="headerlink" title="只针对不正常的情况使用异常"></a>只针对不正常的情况使用异常</h3><p>NullPointerException IndexOutOfBoundException 不应该使用异常捕获处理</p>
+<h3 id="在-finally-块中清理资源或使用-try-with-resource-语句"><a href="#在-finally-块中清理资源或使用-try-with-resource-语句" class="headerlink" title="在 finally 块中清理资源或使用 try-with-resource 语句"></a>在 finally 块中清理资源或使用 try-with-resource 语句</h3><h3 id="尽量使用标准异常"><a href="#尽量使用标准异常" class="headerlink" title="尽量使用标准异常"></a>尽量使用标准异常</h3><p>常用的标准异常</p>
+<ul>
+<li>IllegalArgumentException 参数的值不合适</li>
+<li>IllegalStateException 参数的状态不合适</li>
+<li>NullPointerException 在 null 被禁止的情况下参数值为 null</li>
+<li>IndexOutOfBoundsException 下标越界</li>
+<li>ConcurrentModificationException 在禁止并发修改的情况下，对象检测到并发修改</li>
+<li>UnsupportedOperationException 对象不支持客户请求的方法</li>
+</ul>
+<h3 id="对异常进行文档说明"><a href="#对异常进行文档说明" class="headerlink" title="对异常进行文档说明"></a>对异常进行文档说明</h3><h3 id="优先捕获最具体的异常"><a href="#优先捕获最具体的异常" class="headerlink" title="优先捕获最具体的异常"></a>优先捕获最具体的异常</h3><p>第一个 catch 块处理所有 NumberFormatException 异常，第二个处理所有非 NumberFormatException 异常的 IllegalArgumentException 异常。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">catchMostSpecificExceptionFirst</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        doSomething(<span class="string">&quot;A message&quot;</span>);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (NumberFormatException e) &#123;</span><br><span class="line">        log.error(e);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IllegalArgumentException e) &#123;</span><br><span class="line">        log.error(e)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="不要捕获-Throwable-类"><a href="#不要捕获-Throwable-类" class="headerlink" title="不要捕获 Throwable 类"></a>不要捕获 Throwable 类</h3><p>Throwable 是所有异常和错误的超类.会同时捕获所有错误和异常</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">doNotCatchThrowable</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// do something</span></span><br><span class="line">    &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">        <span class="comment">// don&#x27;t do this!</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="不要忽略异常"><a href="#不要忽略异常" class="headerlink" title="不要忽略异常"></a>不要忽略异常</h3><p>捕获异常后不要无视异常,至少记录异常的信息</p>
+<h3 id="不要记录并抛出异常"><a href="#不要记录并抛出异常" class="headerlink" title="不要记录并抛出异常"></a>不要记录并抛出异常</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">Long</span>(<span class="string">&quot;xyz&quot;</span>);</span><br><span class="line">&#125; <span class="keyword">catch</span> (NumberFormatException e) &#123;</span><br><span class="line">    log.error(e);</span><br><span class="line">    <span class="keyword">throw</span> e;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>会给一个异常多个输出日志</p>
+<h3 id="包装异常时不要抛弃原始异常"><a href="#包装异常时不要抛弃原始异常" class="headerlink" title="包装异常时不要抛弃原始异常"></a>包装异常时不要抛弃原始异常</h3><h3 id="不要在-finally-语句块中使用-return"><a href="#不要在-finally-语句块中使用-return" class="headerlink" title="不要在 finally 语句块中使用 return"></a>不要在 finally 语句块中使用 return</h3><p>在 finally 语句块中使用 return 会直接返回并会丢弃 try 中的 return</p>
+<h2 id="JVM-处理异常的实现"><a href="#JVM-处理异常的实现" class="headerlink" title="JVM 处理异常的实现"></a>JVM 处理异常的实现</h2><h3 id="Exception-table-异常表"><a href="#Exception-table-异常表" class="headerlink" title="Exception table 异常表"></a>Exception table 异常表</h3><p>异常表中包含了一个或多个异常处理者(exception Handler)的信息,其中包括:</p>
+<ul>
+<li>from 可能发生异常的起始点</li>
+<li>to 可能发生异常的结束点</li>
+<li>target 发生异常后异常处理者的位置</li>
+<li>type 异常处理者处理异常的类信息</li>
+</ul>
+<h3 id="JVM-处理异常的机制"><a href="#JVM-处理异常的机制" class="headerlink" title="JVM 处理异常的机制"></a>JVM 处理异常的机制</h3><ul>
+<li>1.JVM 在当前出现异常的方法中查找异常表,是否有合适的处理者来处理</li>
+<li>2.如果当前方法异常表不为空,并且符合处理者的 from 和 to 节点,并且 type 也匹配, JVM 调用位于 target 的调用者来处理</li>
+<li>3.如果上一条未找到合理的处理者,则继续查找异常表中的剩余项目.</li>
+<li>4.如果当前方法的异常表无法处理,则继续向上查找(弹栈处理)刚刚调用该方法的调用处,并重复上面操作</li>
+<li>5.如果所有的栈帧被弹出仍然没有处理,则抛给当前的 Thread,Thread 会终止</li>
+<li>6.如果当前 Thread 为最后一个非守护进程,且未处理异常,则会导致 JVM 终止运行</li>
+</ul>
+<h2 id="异常耗时"><a href="#异常耗时" class="headerlink" title="异常耗时"></a>异常耗时</h2><p>异常建立对象,抛出接住异常都非常耗时</p>
+<p>建立一个异常对象是一个普通 Object 耗时的 20 倍</p>
+<p>参考文章:</p>
+<p><a href="https://www.iteye.com/blog/icyfenix-857722">https://www.iteye.com/blog/icyfenix-857722</a></p>
+]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>Java异常</tag>
+      </tags>
+  </entry>
+</search>
